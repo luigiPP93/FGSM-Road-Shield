@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <title>Compare Images</title>
-   
 </head>
 <body>
     <header>
@@ -22,16 +21,17 @@
         <div class="image-container">
             <h2>Image 1</h2>
             <input type="file" id="image1" accept="image/*" onchange="previewImage('image1', 'preview1')">
-            <img id="preview1" src="https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.melogranoroma.org%2Fsfondo-grigio-scuro%2F&psig=AOvVaw1RwQPa8XNoHpEhJ-faFuBu&ust=1709633745086000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCNDY15Ow2oQDFQAAAAAdAAAAABAE" class="placeholder">
+            <img id="preview1" src="#" class="placeholder">
         </div>
         <div class="image-container">
             <h2>Image 2</h2>
             <input type="file" id="image2" accept="image/*" onchange="previewImage('image2', 'preview2')">
-            <img id="preview2" src="https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.melogranoroma.org%2Fsfondo-grigio-scuro%2F&psig=AOvVaw1RwQPa8XNoHpEhJ-faFuBu&ust=1709633745086000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCNDY15Ow2oQDFQAAAAAdAAAAABAE"  class="placeholder">
+            <img id="preview2" src="#" class="placeholder">
         </div>
         <div class="button-container">
             <button onclick="predictResult()">Predict Result</button>
         </div>
+        <div id="prediction-result"></div>
     </main>
     <footer>
         <p>Created with HTML and CSS</p>
@@ -55,29 +55,25 @@
             }
         }
 
-        
-    </script>
-    <script>
         function predictResult() {
             var modelType = document.getElementById("model-type").value;
             var formData = new FormData();
             formData.append("modelType", modelType);
             formData.append("image1", document.getElementById("image1").files[0]);
             formData.append("image2", document.getElementById("image2").files[0]);
-    
+
             fetch('/predict', {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.text())
             .then(data => {
-                console.log(data); // Stampare la risposta dal server
+                document.getElementById('prediction-result').innerText = data;
             })
             .catch(error => {
                 console.error('Error:', error);
             });
         }
     </script>
-    
 </body>
 </html>

@@ -12,6 +12,8 @@ import model as fgsm
 import json
 from sklearn.metrics import confusion_matrix
 import numpy as np
+import requests
+from PIL import Image
 
 
 def readData():
@@ -54,14 +56,14 @@ def visualization_of_image(data, X_train, y_train):
     list_signs = []
     cols = 5
     num_classes = 43
-    fig, axs = plt.subplots(nrows=num_classes, ncols=cols, figsize=(5, 50))
+    fig, axs = plt.subplots(nrows=num_classes, ncols=cols, figsize=(10, 50))  # Aumenta le dimensioni della figura
     fig.tight_layout()
 
-    for j in range(num_classes):  # Itera sul numero di classi
+    for j in range(num_classes):
         x_selected = X_train[y_train == j]
         for i in range(cols):
-            idx = random.randint(1, len(x_selected) - 2)  # Genera un indice casuale valido
-            axs[j][i].imshow(x_selected[idx, :, :], cmap=plt.get_cmap("gray"))
+            idx = random.randint(1, len(x_selected) - 1)  # Aggiusta l'indice casuale valido
+            axs[j][i].imshow(x_selected[idx], cmap=plt.get_cmap("gray"))  # Usa directamente x_selected[idx]
             axs[j][i].axis("off")
             if i == 2:
                 axs[j][i].set_title(str(j) + "-" + data.iloc[j]["SignName"])
@@ -69,6 +71,7 @@ def visualization_of_image(data, X_train, y_train):
                 num_of_samples.append(len(x_selected))
     plt.show()
     return num_of_samples, num_classes, list_signs
+
 
 
 def datasetDistribution(num_of_samples,num_classes):
@@ -228,23 +231,57 @@ def plot_metrics(history):
     plt.xlabel('epoch')
     plt.show()
     
-def img_process(img):
-    img = np.asarray(img)
-    img = cv2.resize(img, (32, 32))
-    img = preprocess(img)
-    img = img.reshape(1, 32, 32, 1)
-    
+def load_image_from_file(file_or_filepath):
+    # Leggi l'immagine dal percorso del file
+    img = cv2.imread(file_or_filepath)
+
+    # Controlla se l'immagine è stata caricata correttamente
+    if img is not None:
+        # Ridimensiona l'immagine alle dimensioni desiderate (ad esempio, 32x32)
+        img = cv2.resize(img, (32, 32))
+        # Esegui eventuali preelaborazioni sull'immagine (ad esempio, normalizzazione)
+        img = preprocess(img)
+        # Aggiungi una dimensione per la batch (se necessario)
+        img = img.reshape(32, 32)  # Rimuovi la dimensione della batch per la visualizzazione con Matplotlib
+
+        # Mostra l'immagine utilizzando Matplotlib
+        plt.imshow(img, cmap='gray')
+        plt.axis('off')  # Nascondi gli assi
+        #plt.show()
+        
+        img = img.reshape(1, 32, 32, 1)
+   
+    else:
+        print("Errore nel caricamento dell'immagine")
+
     return img
 
 def predict(model,img):
+    list_signs = [
+    'Speed limit (20km/h)', 'Speed limit (30km/h)', 'Speed limit (50km/h)', 'Speed limit (60km/h)', 
+    'Speed limit (70km/h)', 'Speed limit (80km/h)', 'End of speed limit (80km/h)', 'Speed limit (100km/h)', 
+    'Speed limit (120km/h)', 'No passing', 'No passing for vechiles over 3.5 metric tons', 
+    'Right-of-way at the next intersection', 'Priority road', 'Yield', 'Stop', 'No vechiles', 
+    'Vechiles over 3.5 metric tons prohibited', 'No entry', 'General caution', 'Dangerous curve to the left', 
+    'Dangerous curve to the right', 'Double curve', 'Bumpy road', 'Slippery road', 
+    'Road narrows on the right', 'Road work', 'Traffic signals', 'Pedestrians', 'Children crossing', 
+    'Bicycles crossing', 'Beware of ice/snow', 'Wild animals crossing', 'End of all speed and passing limits', 
+    'Turn right ahead', 'Turn left ahead', 'Ahead only', 'Go straight or right', 'Go straight or left', 
+    'Keep right', 'Keep left', 'Roundabout mandatory', 'End of no passing', 
+    'End of no passing by vechiles over 3.5 metric tons'
+    ]
     prediction=np.argmax(model.predict(img), axis=-1)
-    print((prediction[0], (list_signs[prediction[0]])))
-    
+    predizione = (prediction[0], (list_signs[prediction[0]]))
+    return predizione
+
+
 if __name__ == '__main__':
     import sys
+    
     #print(sys.executable)
     data, X_train, y_train,X_val,X_test,y_test,y_val=readData()
     num_of_samples,num_classes,list_signs=visualization_of_image(data,X_train,y_train)
+    print("lista segnaliiiiiii",list_signs)
     datasetDistribution(num_of_samples,num_classes)
     X_train = np.array(list(map(preprocess, X_train)))
     X_val = np.array(list(map(preprocess, X_val)))
@@ -272,7 +309,8 @@ if __name__ == '__main__':
     y_pred,y_pred_classes,y_true,confusion_mtx=confusion_metrix(X_test,y_test)
     metriche(y_pred_classes,y_true)
     plot_metrics(history)
-    img=img_process('FGSM_SIFAI\Screenshot 2024-03-02 103033.jpg')
+    img=load_image_from_file('FGSM_SIFAI\Screenshot 2024-03-02 103033.jpg')
+    print(predict(model,img))
         
     
     
