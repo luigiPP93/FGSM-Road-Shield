@@ -15,11 +15,11 @@ import numpy as np
 
 def readData():
         #opening pickle files and creating variables for testing, training and validation data
-    with open('german-traffic-signs/train.p','rb') as f:    #rb means read binary format.
+    with open('FGSM_SIFAI/german-traffic-signs/train.p','rb') as f:    #rb means read binary format.
         train_data = pickle.load(f)                                    #f is pointer
-    with open('german-traffic-signs/test.p','rb') as f:
+    with open('FGSM_SIFAI/german-traffic-signs/test.p','rb') as f:
         test_data = pickle.load(f)
-    with open('german-traffic-signs/valid.p','rb') as f:
+    with open('FGSM_SIFAI/german-traffic-signs/valid.p','rb') as f:
         valid_data = pickle.load(f)
 
     print(type(train_data))
@@ -40,7 +40,7 @@ def readData():
     assert(X_val.shape[1:] == (32,32,3)), "The dimensions of the images are not 32x32x3"
     assert(X_test.shape[1:] == (32,32,3)), "The dimensions of the images are not 32x32x3"
 
-    data = pd.read_csv('german-traffic-signs/signnames.csv')
+    data = pd.read_csv('FGSM_SIFAI/german-traffic-signs/signnames.csv')
     print("dim",data.shape)
     print(data)
     
@@ -153,15 +153,15 @@ def manipulate_data(X_train, y_train):
     return datagen
 
 def save_model(model,history):
-    model.save('FGSM_modello.h5')
-    with open('history/history.json', 'w') as f:
+    model.save('FGSM_SIFAI/FGSM_modello.h5')
+    with open('FGSM_SIFAI/history/history.json', 'w') as f:
         json.dump(history.history, f)
 
 def load_the_model():
-    model = load_model('FGSM_modello.h5')
+    model = load_model('FGSM_SIFAI/FGSM_modello.h5')
 
     # Carica la storia dell'addestramento
-    with open('history/history.json', 'r') as f:
+    with open('FGSM_SIFAI/history/history.json', 'r') as f:
         history = json.load(f)
         
     return model,history
