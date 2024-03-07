@@ -55,11 +55,29 @@
             }
         }
 
+        
+    </script>
+    <script>
         function predictResult() {
             var modelType = document.getElementById("model-type").value;
-            alert("Predicting results using " + modelType + " model...");
-            // Aggiungi qui la logica per la predizione dei risultati
+            var formData = new FormData();
+            formData.append("modelType", modelType);
+            formData.append("image1", document.getElementById("image1").files[0]);
+            formData.append("image2", document.getElementById("image2").files[0]);
+    
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log(data); // Stampare la risposta dal server
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
         }
     </script>
+    
 </body>
 </html>

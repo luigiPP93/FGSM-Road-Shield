@@ -7,6 +7,7 @@ import cv2
 from keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import load_model
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import model as fgsm
 import json
 from sklearn.metrics import confusion_matrix
@@ -46,26 +47,29 @@ def readData():
     
     return data, X_train, y_train,X_val,X_test,y_test,y_val
     
-def visualization_of_image(data, X_train,y_train):
-        #Display 5 random images for each label class. If throwing error run all again.
+import random
+
+def visualization_of_image(data, X_train, y_train):
     num_of_samples = []
     list_signs = []
     cols = 5
     num_classes = 43
-    fig, axs = plt.subplots(nrows=num_classes, ncols=cols, figsize=(5,50))
+    fig, axs = plt.subplots(nrows=num_classes, ncols=cols, figsize=(5, 50))
     fig.tight_layout()
 
-    for i in range(cols):
-        for j, row in data.iterrows():
-            x_selected = X_train[y_train == j]
-            axs[j][i].imshow(x_selected[random.randint(1, len(x_selected - 2)), :, :], cmap = plt.get_cmap("gray"))
+    for j in range(num_classes):  # Itera sul numero di classi
+        x_selected = X_train[y_train == j]
+        for i in range(cols):
+            idx = random.randint(1, len(x_selected) - 2)  # Genera un indice casuale valido
+            axs[j][i].imshow(x_selected[idx, :, :], cmap=plt.get_cmap("gray"))
             axs[j][i].axis("off")
             if i == 2:
-                axs[j][i].set_title(str(j) + "-" + row["SignName"])
-                list_signs.append(row["SignName"])
+                axs[j][i].set_title(str(j) + "-" + data.iloc[j]["SignName"])
+                list_signs.append(data.iloc[j]["SignName"])
                 num_of_samples.append(len(x_selected))
     plt.show()
-    return num_of_samples,num_classes
+    return num_of_samples, num_classes, list_signs
+
 
 def datasetDistribution(num_of_samples,num_classes):
     print(num_of_samples)
@@ -179,11 +183,68 @@ def confusion_metrix(X_test,y_test):
     # Ora puoi stampare la matrice di confusione
     print(confusion_mtx)
     
+    return y_pred,y_pred_classes,y_true,confusion_mtx
+    
+def metriche(y_pred_classes,y_true):
+    
+
+    # Calcola l'accuratezza
+    accuracy = accuracy_score(y_true, y_pred_classes)
+    print("Accuracy:", accuracy)
+
+    # Calcola la precision
+    precision = precision_score(y_true, y_pred_classes, average='weighted')
+    print("Precision:", precision)
+
+    # Calcola il recall
+    recall = recall_score(y_true, y_pred_classes, average='weighted')
+    print("Recall:", recall)
+
+    # Calcola l'F1-score
+    f1 = f1_score(y_true, y_pred_classes, average='weighted')
+    print("F1-score:", f1)
+    
+def plot_metrics(history):
+    # Estrarre i dati dall'oggetto history
+    loss = history['loss']
+    accuracy = history['accuracy']
+    val_loss = history['val_loss']
+    val_accuracy = history['val_accuracy']
+    
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(accuracy, label='Training Accuracy')
+    plt.plot(val_accuracy, label='Validation Accuracy')
+    plt.title('Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.show()
+    
+    plt.plot(history['accuracy'])
+    plt.plot(history['val_accuracy'])
+    plt.legend(['accuracy', 'val_accuracy'])
+    plt.title('Accuracy')
+    plt.xlabel('epoch')
+    plt.show()
+    
+def img_process(img):
+    img = np.asarray(img)
+    img = cv2.resize(img, (32, 32))
+    img = preprocess(img)
+    img = img.reshape(1, 32, 32, 1)
+    
+    return img
+
+def predict(model,img):
+    prediction=np.argmax(model.predict(img), axis=-1)
+    print((prediction[0], (list_signs[prediction[0]])))
+    
 if __name__ == '__main__':
     import sys
     #print(sys.executable)
     data, X_train, y_train,X_val,X_test,y_test,y_val=readData()
-    num_of_samples,num_classes=visualization_of_image(data,X_train,y_train)
+    num_of_samples,num_classes,list_signs=visualization_of_image(data,X_train,y_train)
     datasetDistribution(num_of_samples,num_classes)
     X_train = np.array(list(map(preprocess, X_train)))
     X_val = np.array(list(map(preprocess, X_val)))
@@ -208,8 +269,10 @@ if __name__ == '__main__':
     # Valuta le prestazioni del modello sui nuovi dati, ad esempio calcolando l'accuratezza
     accuracy = model.evaluate(X_test, y_test)
     print('Accuracy:', accuracy)
-    confusion_metrix(X_test,y_test)
-    
+    y_pred,y_pred_classes,y_true,confusion_mtx=confusion_metrix(X_test,y_test)
+    metriche(y_pred_classes,y_true)
+    plot_metrics(history)
+    img=img_process('FGSM_SIFAI\Screenshot 2024-03-02 103033.jpg')
         
     
     
