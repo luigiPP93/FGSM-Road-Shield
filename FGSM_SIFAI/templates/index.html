@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Compare Images</title>
+   
+</head>
+<body>
+    <header>
+        <h1>Compare Images</h1>
+    </header>
+    <main>
+        <div>
+            <label for="model-type">Select Model Type:</label>
+            <select id="model-type">
+                <option value="normal">Normal Model</option>
+                <option value="modified">Modified Model</option>
+            </select>
+        </div>
+        <div class="image-container">
+            <h2>Image 1</h2>
+            <input type="file" id="image1" accept="image/*" onchange="previewImage('image1', 'preview1')">
+            <img id="preview1" src="https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.melogranoroma.org%2Fsfondo-grigio-scuro%2F&psig=AOvVaw1RwQPa8XNoHpEhJ-faFuBu&ust=1709633745086000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCNDY15Ow2oQDFQAAAAAdAAAAABAE" class="placeholder">
+        </div>
+        <div class="image-container">
+            <h2>Image 2</h2>
+            <input type="file" id="image2" accept="image/*" onchange="previewImage('image2', 'preview2')">
+            <img id="preview2" src="https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.melogranoroma.org%2Fsfondo-grigio-scuro%2F&psig=AOvVaw1RwQPa8XNoHpEhJ-faFuBu&ust=1709633745086000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCNDY15Ow2oQDFQAAAAAdAAAAABAE"  class="placeholder">
+        </div>
+        <div class="button-container">
+            <button onclick="predictResult()">Predict Result</button>
+        </div>
+    </main>
+    <footer>
+        <p>Created with HTML and CSS</p>
+    </footer>
+    <script>
+        function previewImage(inputId, previewId) {
+            var preview = document.getElementById(previewId);
+            var file = document.getElementById(inputId).files[0];
+            var reader = new FileReader();
+
+            reader.onloadend = function() {
+                preview.src = reader.result;
+                preview.classList.remove('placeholder'); // Rimuove la classe placeholder quando l'immagine viene caricata
+            }
+
+            if (file) {
+                reader.readAsDataURL(file);
+            } else {
+                preview.src = "placeholder_gray.png"; // Se non viene selezionata alcuna immagine, visualizza il placeholder
+                preview.classList.add('placeholder'); // Aggiunge la classe placeholder
+            }
+        }
+
+        function predictResult() {
+            var modelType = document.getElementById("model-type").value;
+            alert("Predicting results using " + modelType + " model...");
+            // Aggiungi qui la logica per la predizione dei risultati
+        }
+    </script>
+</body>
+</html>

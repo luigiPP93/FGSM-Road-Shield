@@ -1,0 +1,52 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+header, main, footer {
+    padding: 20px;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+}
+
+main {
+    display: flex;
+    justify-content: center;
+}
+
+ /* Stili CSS qui */
+ .image-container img {
+    max-width: 200px;
+    max-height: 200px;
+}
+
+.placeholder {
+    background-color: #ccc;
+    width: 200px;
+    height: 200px;
+}
+
+.button-container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+
+.uploaded-image, .random-image {
+    margin: 0 20px;
+    text-align: center;
+}
+
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
