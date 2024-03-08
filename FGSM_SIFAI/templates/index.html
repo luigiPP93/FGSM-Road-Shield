@@ -23,10 +23,21 @@
             <input type="file" id="image1" accept="image/*" onchange="previewImage('image1', 'preview1')">
             <img id="preview1" src="#" class="placeholder">
         </div>
+        <div>
+            <label for="signs">Select Traffic Sign:</label>
+            <select id="signs">
+                {% for sign in list_signs %}
+                <option value="{{ sign }}">{{ sign }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <div class="image-container">
-            <h2>Image 2</h2>
+            <h2>Image with intrusion</h2>
             <input type="file" id="image2" accept="image/*" onchange="previewImage('image2', 'preview2')">
             <img id="preview2" src="#" class="placeholder">
+        </div>
+        <div class="button-for-intrusion">
+            <button onclick="ApplyIntrusion()">Apply Intrusion</button>
         </div>
         <div class="button-container">
             <button onclick="predictResult()">Predict Result</button>
@@ -60,9 +71,32 @@
             var formData = new FormData();
             formData.append("modelType", modelType);
             formData.append("image1", document.getElementById("image1").files[0]);
-            formData.append("image2", document.getElementById("image2").files[0]);
+            //formData.append("image2", document.getElementById("image2").files[0]);
 
             fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('prediction-result').innerText = data;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function ApplyIntrusion(){
+            var modelType = document.getElementById("model-type").value;
+            var label = document.getElementById("signs").value;
+            var formData = new FormData();
+            formData.append("modelType", modelType);
+            formData.append("label", label);
+            formData.append("image1", document.getElementById("image1").files[0]);
+            //formData.append("image2", document.getElementById("image2").files[0]);
+
+
+            fetch('/applyIntrusion', {
                 method: 'POST',
                 body: formData
             })

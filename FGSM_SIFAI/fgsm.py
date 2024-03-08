@@ -9,6 +9,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import load_model
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import model as fgsm
+import tensorflow as tf
 import json
 from sklearn.metrics import confusion_matrix
 import numpy as np
@@ -274,6 +275,21 @@ def predict(model,img):
     predizione = (prediction[0], (list_signs[prediction[0]]))
     return predizione
 
+def adversarial_pattern(image, label,model):
+    image = tf.cast(image, tf.float32)
+
+    with tf.GradientTape() as tape:
+        tape.watch(image)
+        prediction = model(image)
+        print("Predictionnnn",prediction)
+        loss = tf.keras.losses.MSE(label, prediction)
+        print("loss", loss)
+        print("lable",label)
+        print("prediction",prediction)
+    gradient = tape.gradient(loss, image)
+    print("gradient",gradient)
+    signed_grad = tf.sign(gradient)
+    return signed_grad
 
 if __name__ == '__main__':
     import sys
@@ -311,7 +327,24 @@ if __name__ == '__main__':
     plot_metrics(history)
     img=load_image_from_file('FGSM_SIFAI\Screenshot 2024-03-02 103033.jpg')
     print(predict(model,img))
-        
+    
+    img_rows, img_cols, channels = 32, 32, 1
+    image = X_test[3000]
+    image_label = y_test[3000]
+    print("image_lable",image_label)
+    print("image_lable",image_label.shape())
+    perturbations = adversarial_pattern(image.reshape((1, img_rows, img_cols, channels)), image_label,model).numpy()
+    adversarial = image + perturbations * 0.1
+
+    print("Model prediction == ",list_signs[model.predict(image.reshape((1, img_rows, img_cols, channels))).argmax()])
+    print("Prediction with Intrusion== ", list_signs[model.predict(adversarial).argmax()])
+
+    if channels == 1:
+        plt.imshow(adversarial.reshape((img_rows, img_cols)))
+    else:
+        plt.imshow(adversarial.reshape((img_rows, img_cols, channels)))
+
+    plt.show()
     
     
     
