@@ -33,8 +33,8 @@
         </div>
         <div class="image-container">
             <h2>Image with intrusion</h2>
-            <input type="file" id="image2" accept="image/*" onchange="previewImage('image2', 'preview2')">
-            <img id="preview2" src="#" class="placeholder">
+            <img src="C:\Users\luigi\OneDrive\Documenti\GitHub\Image-Perturbation-for-Visual-Security-Enhancement\FGSM_SIFAI\imgTest\adversarial_image.png" alt="Adversarial Image">
+            <img id="preview2" src="" class="placeholder">
         </div>
         <div class="button-for-intrusion">
             <button onclick="ApplyIntrusion()">Apply Intrusion</button>
@@ -66,37 +66,47 @@
             }
         }
 
-        function predictResult() {
-            var modelType = document.getElementById("model-type").value;
-            var formData = new FormData();
-            formData.append("modelType", modelType);
-            formData.append("image1", document.getElementById("image1").files[0]);
-            //formData.append("image2", document.getElementById("image2").files[0]);
-
-            fetch('/predict', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('prediction-result').innerText = data;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        }
-
-        function ApplyIntrusion(){
+        function ApplyIntrusion() {
             var modelType = document.getElementById("model-type").value;
             var label = document.getElementById("signs").value;
             var formData = new FormData();
             formData.append("modelType", modelType);
             formData.append("label", label);
             formData.append("image1", document.getElementById("image1").files[0]);
-            //formData.append("image2", document.getElementById("image2").files[0]);
-
 
             fetch('/applyIntrusion', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                // Se la risposta è OK, aggiorna l'immagine nell'HTML
+                if (response.ok) {
+                    // Leggi il percorso dell'immagine dalla risposta JSON
+                    return response.json();
+                } else {
+                    console.error('Response not OK');
+                }
+            })
+            .then(data => {
+                // Visualizza l'immagine nell'HTML
+                // Visualizza l'immagine nell'HTML
+                document.getElementById("preview2").src = data.image_url;
+                // Aggiorna il risultato della previsione nell'HTML
+                document.getElementById('prediction-result').innerText = data.prediction;
+       
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function predictResult() {
+            var modelType = document.getElementById("model-type").value;
+            var formData = new FormData();
+            formData.append("modelType", modelType);
+            formData.append("image1", document.getElementById("image1").files[0]);
+
+            fetch('/predict', {
                 method: 'POST',
                 body: formData
             })

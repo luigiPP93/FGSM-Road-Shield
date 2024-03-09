@@ -6,6 +6,12 @@ import fgsm
 import cv2
 import os
 import numpy as np
+import base64
+from flask import send_file
+from PIL import Image
+import matplotlib.pyplot as plt
+from flask import jsonify
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'FGSM_SIFAI/imgTest'
 
@@ -55,7 +61,16 @@ def predict():
         #os.remove(filepath)
         
         return str(predizione)
-
+    
+    
+def save_image(image, filepath):
+    try:
+        image.save(filepath)
+        print(f"Immagine salvata correttamente in {filepath}")
+    except Exception as e:
+        print(f"Errore durante il salvataggio dell'immagine: {e}")
+        
+        
 @app.route('/applyIntrusion', methods=['POST'])
 def applyIntrusion():
     list_signs = [
@@ -95,7 +110,7 @@ def applyIntrusion():
         model,history=fgsm.load_the_model()
         #img=filepath
         #img = cv2.imread(filepath)
-        indice_classe = 14
+        indice_classe = 3
         num_classi = 43
 
         # Creiamo un vettore di etichette di dimensioni 43
@@ -107,11 +122,22 @@ def applyIntrusion():
         #predizione = fgsm.predict(model,img)
         #print("Predizione",predizione)
         #os.remove(filepath)
-    
         print("Model prediction == ",list_signs[model.predict(img.reshape((1, img_rows, img_cols, channels))).argmax()])
         print("Prediction with Intrusion== ", list_signs[model.predict(adversarial).argmax()])
         
-        return str(list_signs[model.predict(adversarial).argmax()])
+        if channels == 1:
+            plt.imshow(adversarial.reshape((img_rows, img_cols)))
+        
+        else:
+            plt.imshow(adversarial.reshape((img_rows, img_cols, channels)))
+
+        # Salvare l'immagine
+        plt.savefig('C:\\Users\\luigi\\OneDrive\\Documenti\\GitHub\\Image-Perturbation-for-Visual-Security-Enhancement\\FGSM_SIFAI\\static\\adversarial_image.png')
+        
+        image_path = 'C:\\Users\\luigi\\OneDrive\\Documenti\\GitHub\\Image-Perturbation-for-Visual-Security-Enhancement\\FGSM_SIFAI\\static\\adversarial_image.png'
+
+        # Restituire il percorso dell'immagine come risposta JSON
+        return jsonify({'image_url': image_path, 'prediction': str(list_signs[model.predict(adversarial).argmax()])})
 
 if __name__ == '__main__':
     import sys
