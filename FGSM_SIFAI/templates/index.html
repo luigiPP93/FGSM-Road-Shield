@@ -25,9 +25,9 @@
         </div>
         <div>
             <label for="signs">Select Traffic Sign:</label>
-            <select id="signs">
+            <select id="signs" name="signs">
                 {% for sign in list_signs %}
-                <option value="{{ sign }}">{{ sign }}</option>
+                <option value="{{ loop.index0 }}">{{ sign }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -70,6 +70,8 @@
             var modelType = document.getElementById("model-type").value;
             var label = document.getElementById("signs").value;
             var formData = new FormData();
+            var signIndex = document.getElementById("signs").value;
+            formData.append("signIndex", signIndex);
             formData.append("modelType", modelType);
             formData.append("label", label);
             formData.append("image1", document.getElementById("image1").files[0]);

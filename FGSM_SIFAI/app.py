@@ -2,28 +2,20 @@ from flask import Flask, render_template
 from flask import request
 import fgsm
 import os
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from flask import Flask, render_template, request, jsonify, url_for
+from tensorflow.keras.utils import to_categorical
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'FGSM_SIFAI/static/img'
 
 @app.route('/')
 def index():
-    list_signs = [
-    'Speed limit (20km/h)', 'Speed limit (30km/h)', 'Speed limit (50km/h)', 'Speed limit (60km/h)', 
-    'Speed limit (70km/h)', 'Speed limit (80km/h)', 'End of speed limit (80km/h)', 'Speed limit (100km/h)', 
-    'Speed limit (120km/h)', 'No passing', 'No passing for vechiles over 3.5 metric tons', 
-    'Right-of-way at the next intersection', 'Priority road', 'Yield', 'Stop', 'No vechiles', 
-    'Vechiles over 3.5 metric tons prohibited', 'No entry', 'General caution', 'Dangerous curve to the left', 
-    'Dangerous curve to the right', 'Double curve', 'Bumpy road', 'Slippery road', 
-    'Road narrows on the right', 'Road work', 'Traffic signals', 'Pedestrians', 'Children crossing', 
-    'Bicycles crossing', 'Beware of ice/snow', 'Wild animals crossing', 'End of all speed and passing limits', 
-    'Turn right ahead', 'Turn left ahead', 'Ahead only', 'Go straight or right', 'Go straight or left', 
-    'Keep right', 'Keep left', 'Roundabout mandatory', 'End of no passing', 
-    'End of no passing by vechiles over 3.5 metric tons'
-    ]
+    # Leggi i nomi dei segnali dal file CSV
+    df = pd.read_csv('FGSM_SIFAI/german-traffic-signs/signnames.csv')
+    list_signs = df['SignName'].tolist()
     return render_template('index.html',list_signs=list_signs)
 
 @app.route('/predict', methods=['POST'])
@@ -63,19 +55,9 @@ def save_image(image, filepath):
         
 @app.route('/applyIntrusion', methods=['POST'])
 def applyIntrusion():
-    list_signs = [
-    'Speed limit (20km/h)', 'Speed limit (30km/h)', 'Speed limit (50km/h)', 'Speed limit (60km/h)', 
-    'Speed limit (70km/h)', 'Speed limit (80km/h)', 'End of speed limit (80km/h)', 'Speed limit (100km/h)', 
-    'Speed limit (120km/h)', 'No passing', 'No passing for vechiles over 3.5 metric tons', 
-    'Right-of-way at the next intersection', 'Priority road', 'Yield', 'Stop', 'No vechiles', 
-    'Vechiles over 3.5 metric tons prohibited', 'No entry', 'General caution', 'Dangerous curve to the left', 
-    'Dangerous curve to the right', 'Double curve', 'Bumpy road', 'Slippery road', 
-    'Road narrows on the right', 'Road work', 'Traffic signals', 'Pedestrians', 'Children crossing', 
-    'Bicycles crossing', 'Beware of ice/snow', 'Wild animals crossing', 'End of all speed and passing limits', 
-    'Turn right ahead', 'Turn left ahead', 'Ahead only', 'Go straight or right', 'Go straight or left', 
-    'Keep right', 'Keep left', 'Roundabout mandatory', 'End of no passing', 
-    'End of no passing by vechiles over 3.5 metric tons'
-    ]
+    df = pd.read_csv('FGSM_SIFAI/german-traffic-signs/signnames.csv')
+    list_signs = df['SignName'].tolist()
+    
     if request.method == 'POST':
         model_type = request.form.get('modelType')
         image1 = request.files.get('image1')
@@ -90,20 +72,28 @@ def applyIntrusion():
         model, history = fgsm.load_the_model()  # Carica il tuo modello qui
         img = fgsm.load_image_from_file(save_path)  # Carica l'immagine per l'elaborazione
         
-        indice_classe = 3  # esempio di classe target
-        num_classi = 43
-        etichetta = np.zeros(num_classi)
-        etichetta[indice_classe] = 1
+        # Indice della classe di esempio
+        sign_index = int(request.form.get('signIndex'))  # Ottiene l'indice della classe come intero
+
+     
+        # Numero totale di classi
+        num_class = 43
+        # Crea l'etichetta in formato one-hot
+        etichetta_one_hot = to_categorical(sign_index, num_class)
+
+        print(etichetta_one_hot)
         
-        perturbations = fgsm.adversarial_pattern(img.reshape((1, img_rows, img_cols, channels)), etichetta, model).numpy()
+        perturbations = fgsm.adversarial_pattern(img.reshape((1, img_rows, img_cols, channels)), etichetta_one_hot, model).numpy()
         adversarial = img + perturbations * 0.3
 
         # Salva l'immagine
         plt.figure()
+        
         if channels == 1:
             plt.imshow(adversarial.reshape((img_rows, img_cols)), cmap='gray')
         else:
             plt.imshow(adversarial.reshape((img_rows, img_cols, channels)))
+        
         plt.axis('off')
         plt.savefig(adversarial_save_path, bbox_inches='tight', pad_inches=0)
         plt.close()
