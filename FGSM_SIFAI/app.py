@@ -1,24 +1,13 @@
 from flask import Flask, render_template
-import pickle
 from flask import request
-import pandas as pd
 import fgsm
-import cv2
 import os
 import numpy as np
-import base64
-from flask import send_file
-from PIL import Image
 import matplotlib.pyplot as plt
-from flask import send_from_directory
-from flask import jsonify
+from flask import Flask, render_template, request, jsonify, url_for
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'FGSM_SIFAI/static/img'
-
-@app.route('/img/<filename>')
-def serve_image(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/')
 def index():
@@ -88,52 +77,39 @@ def applyIntrusion():
     'End of no passing by vechiles over 3.5 metric tons'
     ]
     if request.method == 'POST':
-        model_type = request.form['modelType']
-        image1 = request.files['image1']
-        #label = request.form['label']
-        #print("LABEL",label)
-        #image2 = request.files['image2']
+        model_type = request.form.get('modelType')
+        image1 = request.files.get('image1')
         
         filename = image1.filename
-        image1.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        print("path",filepath)
-    
-
-        # Fai quello che vuoi fare con le immagini qui, come stamparle sul terminale
-        print("Model Type:", model_type)
-        print("Image 1:", image1)
-        #print("Image 2:", image2)
+        adversarial_filename = "adversarial_" + filename
+        save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        adversarial_save_path = os.path.join(app.config['UPLOAD_FOLDER'], adversarial_filename)
+        image1.save(save_path)
         
-        
-        # Leggi l'immagine dal percorso del file
         img_rows, img_cols, channels = 32, 32, 1
-        model,history=fgsm.load_the_model()
-        #img=filepath
-        #img = cv2.imread(filepath)
-        indice_classe = 3
+        model, history = fgsm.load_the_model()  # Carica il tuo modello qui
+        img = fgsm.load_image_from_file(save_path)  # Carica l'immagine per l'elaborazione
+        
+        indice_classe = 3  # esempio di classe target
         num_classi = 43
-
-        # Creiamo un vettore di etichette di dimensioni 43
         etichetta = np.zeros(num_classi)
         etichetta[indice_classe] = 1
-        img=fgsm.load_image_from_file(filepath)
-        perturbations=fgsm.adversarial_pattern(img.reshape((1, img_rows, img_cols, channels)), etichetta,model).numpy()
-        adversarial = img + perturbations * 0.3
-        #predizione = fgsm.predict(model,img)
-        #print("Predizione",predizione)
-        #os.remove(filepath)
-        print("Model prediction == ",list_signs[model.predict(img.reshape((1, img_rows, img_cols, channels))).argmax()])
-        print("Prediction with Intrusion== ", list_signs[model.predict(adversarial).argmax()])
         
+        perturbations = fgsm.adversarial_pattern(img.reshape((1, img_rows, img_cols, channels)), etichetta, model).numpy()
+        adversarial = img + perturbations * 0.3
+
+        # Salva l'immagine
+        plt.figure()
         if channels == 1:
-            plt.imshow(adversarial.reshape((img_rows, img_cols)))
+            plt.imshow(adversarial.reshape((img_rows, img_cols)), cmap='gray')
         else:
             plt.imshow(adversarial.reshape((img_rows, img_cols, channels)))
-        adversarial_filename = "adversarial_" + filename
-        cv2.imwrite(os.path.join(app.config['UPLOAD_FOLDER'], adversarial_filename), adversarial)
-        image_path = "static/img/adversarial_image.png"
-        return jsonify({'image_url': image_path, 'prediction': str(list_signs[model.predict(adversarial).argmax()])})
+        plt.axis('off')
+        plt.savefig(adversarial_save_path, bbox_inches='tight', pad_inches=0)
+        plt.close()
+        image_url = url_for('static', filename='img/' + adversarial_filename)
+
+        return jsonify({'image_url': image_url, 'prediction': list_signs[model.predict(adversarial).argmax()]})
        
 if __name__ == '__main__':
     import sys
