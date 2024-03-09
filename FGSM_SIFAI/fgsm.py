@@ -1,5 +1,7 @@
 import pickle
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import random
 import numpy as np
@@ -15,7 +17,6 @@ from sklearn.metrics import confusion_matrix
 import numpy as np
 import requests
 from PIL import Image
-
 
 def readData():
         #opening pickle files and creating variables for testing, training and validation data
@@ -49,7 +50,6 @@ def readData():
     print(data)
     
     return data, X_train, y_train,X_val,X_test,y_test,y_val
-    
 import random
 
 def visualization_of_image(data, X_train, y_train):
@@ -72,8 +72,6 @@ def visualization_of_image(data, X_train, y_train):
                 num_of_samples.append(len(x_selected))
     plt.show()
     return num_of_samples, num_classes, list_signs
-
-
 
 def datasetDistribution(num_of_samples,num_classes):
     print(num_of_samples)
@@ -190,8 +188,6 @@ def confusion_metrix(X_test,y_test):
     return y_pred,y_pred_classes,y_true,confusion_mtx
     
 def metriche(y_pred_classes,y_true):
-    
-
     # Calcola l'accuratezza
     accuracy = accuracy_score(y_true, y_pred_classes)
     print("Accuracy:", accuracy)
@@ -215,7 +211,6 @@ def plot_metrics(history):
     val_loss = history['val_loss']
     val_accuracy = history['val_accuracy']
     
-
     plt.figure(figsize=(10, 5))
     plt.plot(accuracy, label='Training Accuracy')
     plt.plot(val_accuracy, label='Validation Accuracy')
@@ -246,8 +241,8 @@ def load_image_from_file(file_or_filepath):
         img = img.reshape(32, 32)  # Rimuovi la dimensione della batch per la visualizzazione con Matplotlib
 
         # Mostra l'immagine utilizzando Matplotlib
-        plt.imshow(img, cmap='gray')
-        plt.axis('off')  # Nascondi gli assi
+        #plt.imshow(img, cmap='gray')
+        #plt.axis('off')  # Nascondi gli assi
         #plt.show()
         
         img = img.reshape(1, 32, 32, 1)
@@ -281,11 +276,11 @@ def adversarial_pattern(image, label,model):
     with tf.GradientTape() as tape:
         tape.watch(image)
         prediction = model(image)
-        print("Predictionnnn",prediction)
+        #print("Predictionnnn",prediction)
         loss = tf.keras.losses.MSE(label, prediction)
-        print("loss", loss)
-        print("lable",label)
-        print("prediction",prediction)
+        #print("loss", loss)
+        #print("lable",label)
+        #print("prediction",prediction)
     gradient = tape.gradient(loss, image)
     print("gradient",gradient)
     signed_grad = tf.sign(gradient)

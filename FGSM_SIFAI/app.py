@@ -10,10 +10,15 @@ import base64
 from flask import send_file
 from PIL import Image
 import matplotlib.pyplot as plt
+from flask import send_from_directory
 from flask import jsonify
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'FGSM_SIFAI/imgTest'
+app.config['UPLOAD_FOLDER'] = 'FGSM_SIFAI/static/img'
+
+@app.route('/img/<filename>')
+def serve_image(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/')
 def index():
@@ -30,7 +35,6 @@ def index():
     'Keep right', 'Keep left', 'Roundabout mandatory', 'End of no passing', 
     'End of no passing by vechiles over 3.5 metric tons'
     ]
-   
     return render_template('index.html',list_signs=list_signs)
 
 @app.route('/predict', methods=['POST'])
@@ -45,12 +49,10 @@ def predict():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         print("path",filepath)
     
-
         # Fai quello che vuoi fare con le immagini qui, come stamparle sul terminale
         print("Model Type:", model_type)
         print("Image 1:", image1)
         #print("Image 2:", image2)
-        
         
         # Leggi l'immagine dal percorso del file
         
@@ -61,7 +63,6 @@ def predict():
         #os.remove(filepath)
         
         return str(predizione)
-    
     
 def save_image(image, filepath):
     try:
@@ -127,18 +128,13 @@ def applyIntrusion():
         
         if channels == 1:
             plt.imshow(adversarial.reshape((img_rows, img_cols)))
-        
         else:
             plt.imshow(adversarial.reshape((img_rows, img_cols, channels)))
-
-        # Salvare l'immagine
-        plt.savefig('C:\\Users\\luigi\\OneDrive\\Documenti\\GitHub\\Image-Perturbation-for-Visual-Security-Enhancement\\FGSM_SIFAI\\static\\adversarial_image.png')
-        
-        image_path = 'C:\\Users\\luigi\\OneDrive\\Documenti\\GitHub\\Image-Perturbation-for-Visual-Security-Enhancement\\FGSM_SIFAI\\static\\adversarial_image.png'
-
-        # Restituire il percorso dell'immagine come risposta JSON
+        adversarial_filename = "adversarial_" + filename
+        cv2.imwrite(os.path.join(app.config['UPLOAD_FOLDER'], adversarial_filename), adversarial)
+        image_path = "static/img/adversarial_image.png"
         return jsonify({'image_url': image_path, 'prediction': str(list_signs[model.predict(adversarial).argmax()])})
-
+       
 if __name__ == '__main__':
     import sys
     #print(sys.executable)
