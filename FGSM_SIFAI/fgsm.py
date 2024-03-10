@@ -239,11 +239,6 @@ def load_image_from_file(file_or_filepath):
         img = preprocess(img)
         # Aggiungi una dimensione per la batch (se necessario)
         img = img.reshape(32, 32)  # Rimuovi la dimensione della batch per la visualizzazione con Matplotlib
-
-        # Mostra l'immagine utilizzando Matplotlib
-        #plt.imshow(img, cmap='gray')
-        #plt.axis('off')  # Nascondi gli assi
-        #plt.show()
         
         img = img.reshape(1, 32, 32, 1)
    

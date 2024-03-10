@@ -75,7 +75,6 @@ def applyIntrusion():
         # Indice della classe di esempio
         sign_index = int(request.form.get('signIndex'))  # Ottiene l'indice della classe come intero
 
-     
         # Numero totale di classi
         num_class = 43
         # Crea l'etichetta in formato one-hot

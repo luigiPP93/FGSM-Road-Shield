@@ -29,6 +29,12 @@ main {
     background-color: #ccc;
     width: 200px;
     height: 200px;
+    max-width: 200px;
+    max-height: 200px;
+    display: block; /* Aggiunto per centrare l'immagine, se necessario */
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* Impedisce a parti dell'immagine di fuoriuscire se più grandi del contenitore */
 }
 
 .button-container {

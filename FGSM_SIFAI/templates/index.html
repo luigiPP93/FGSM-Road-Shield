@@ -4,50 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
     <title>Compare Images</title>
 </head>
 <body>
     <header>
-        <h1>Compare Images</h1>
+        <h1>Image Perturbation</h1>
     </header>
+
     <main>
-        <div>
-            <label for="model-type">Select Model Type:</label>
-            <select id="model-type">
-                <option value="normal">Normal Model</option>
-                <option value="modified">Modified Model</option>
-            </select>
+        <div class="container">
+            <!-- Prima riga per i tre input -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="attack-type" class="form-label">Select Attack Type:</label>
+                    <select id="attack-type" class="form-control">
+                        <option value="FGSM">FGSM</option>
+                        <option value="Adversarial Patch Attack">Adversarial Patch Attack</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="model-type" class="form-label">Select Model Type:</label>
+                    <select id="model-type" class="form-control">
+                        <option value="normal">Normal Model</option>
+                        <option value="modified">Modified Model</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="signs" class="form-label" >Select Traffic Sign:</label>
+                    <select id="signs" name="signs" class="form-control">
+                        {% for sign in list_signs %}
+                        <option value="{{ loop.index0 }}">{{ sign }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+    
+            <div class="row">
+                <div class="col-md-6">
+                    <h2>Original Image:</h2>
+                    <input type="file" id="image1" class="form-control-sm " accept="image/*" onchange="previewImage('image1', 'preview1')">
+                    <div class="image-container placeholder" style="width: 200px; height: 200px; overflow: hidden;">
+                        <img id="preview1" src="#" alt="Image preview" style="width: 100%; height: 100%; object-fit: cover;" class="img-fluid">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h2>Image with Intrusion:</h2>
+                    <div id="prediction-result" class="m-2"></div>
+                    <div class="image-container placeholder" style="width: 200px; height: 200px; overflow: hidden;">
+                        <img id="preview2" src="" alt="Intrusion image preview" style="width: 100%; height: 100%; object-fit: cover;" class="img-fluid">
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="image-container">
-            <h2>Image 1</h2>
-            <input type="file" id="image1" accept="image/*" onchange="previewImage('image1', 'preview1')">
-            <img id="preview1" src="#" class="placeholder">
+        <div class="row mt-4">
+            <div class="col-md-6 text-center">
+                <button class="btn btn-primary btn-lg" onclick="ApplyIntrusion()">Apply Intrusion</button>
+            </div>
+            <div class="col-md-6 text-center">
+                <button class="btn btn-primary btn-lg" onclick="predictResult()">Predict Result</button>
+            </div>
         </div>
-        <div>
-            <label for="signs">Select Traffic Sign:</label>
-            <select id="signs" name="signs">
-                {% for sign in list_signs %}
-                <option value="{{ loop.index0 }}">{{ sign }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="image-container">
-            <h2>Image with intrusion</h2>
-            <img id="preview2" src="" class="placeholder">
-        </div>
-        
-        <div class="button-for-intrusion">
-            <button onclick="ApplyIntrusion()">Apply Intrusion</button>
-        </div>
-        <div class="button-container">
-            <button onclick="predictResult()">Predict Result</button>
-        </div>
-        <div id="prediction-result"></div>
     </main>
+    
     <footer>
         <p>Created with HTML and CSS</p>
     </footer>
     <script>
+
         function previewImage(inputId, previewId) {
             var preview = document.getElementById(previewId);
             var file = document.getElementById(inputId).files[0];
@@ -71,6 +100,7 @@
             var label = document.getElementById("signs").value;
             var formData = new FormData();
             var signIndex = document.getElementById("signs").value;
+
             formData.append("signIndex", signIndex);
             formData.append("modelType", modelType);
             formData.append("label", label);
@@ -104,6 +134,7 @@
         function predictResult() {
             var modelType = document.getElementById("model-type").value;
             var formData = new FormData();
+
             formData.append("modelType", modelType);
             formData.append("image1", document.getElementById("image1").files[0]);
 
