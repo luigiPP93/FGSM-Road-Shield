@@ -120,9 +120,11 @@
                 }
             })
             .then(data => {
+                // Aggiungi un timestamp all'URL per evitare la cache del browser
+                var newImageUrl = data.image_url + "?t=" + new Date().getTime();
+                
                 // Visualizza l'immagine nell'HTML
-                // Visualizza l'immagine nell'HTML
-                document.getElementById("preview2").src = data.image_url;
+                document.getElementById("preview2").src = newImageUrl;
                 // Aggiorna il risultato della previsione nell'HTML
                 document.getElementById('prediction-result').innerText = data.prediction;
             })
@@ -130,6 +132,7 @@
                 console.error('Error:', error);
             });
         }
+
 
         function predictResult() {
             var modelType = document.getElementById("model-type").value;
