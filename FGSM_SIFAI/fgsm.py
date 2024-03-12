@@ -100,7 +100,7 @@ def equalize(img):
 def preprocess(img):
     #img = gray(img)
     #img = equalize(img)
-    #img = img/255 #normalizing of images
+    img = img/255 #normalizing of images
     return img
 
 def view_image_processed(X_train):
@@ -151,7 +151,7 @@ def manipulate_data(X_train, y_train):
 
     #Display batch of random 15 images
     for i in range(15):
-        axs[i].imshow(X_batch[i].reshape(32, 32))
+        axs[i].imshow(X_batch[i].reshape(32, 32,3))
         axs[i].axis("off")
         plt.show
 
@@ -227,25 +227,32 @@ def plot_metrics(history):
     plt.xlabel('epoch')
     plt.show()
     
+import cv2
+
 def load_image_from_file(file_or_filepath):
-    # Leggi l'immagine dal percorso del file
+    # Leggi l'immagine dal percorso del file in formato BGR
     img = cv2.imread(file_or_filepath)
 
     # Controlla se l'immagine è stata caricata correttamente
     if img is not None:
+        # Converti l'immagine da BGR a RGB
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        
         # Ridimensiona l'immagine alle dimensioni desiderate (ad esempio, 32x32)
         img = cv2.resize(img, (32, 32))
-        # Esegui eventuali preelaborazioni sull'immagine (ad esempio, normalizzazione)
-        img = preprocess(img)
-        # Aggiungi una dimensione per la batch (se necessario)
-        #img = img.reshape(32, 32,)  # Rimuovi la dimensione della batch per la visualizzazione con Matplotlib
         
+        # Esegui eventuali preelaborazioni sull'immagine (ad esempio, normalizzazione)
+        # Assicurati che la funzione preprocess() sia definita altrove nel tuo codice
+        img = preprocess(img)
+        
+        # Aggiungi una dimensione per la batch (se necessario)
         img = img.reshape(1, 32, 32, 3)
    
     else:
         print("Errore nel caricamento dell'immagine")
 
     return img
+
 
 def predict(model,img):
     list_signs = [
