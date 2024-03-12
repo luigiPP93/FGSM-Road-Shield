@@ -21,21 +21,21 @@
         <div class="container">
             <!-- Prima riga per i tre input -->
             <div class="row mb-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="attack-type" class="form-label">Select Attack Type:</label>
                     <select id="attack-type" class="form-control">
                         <option value="FGSM">FGSM</option>
                         <option value="Adversarial Patch Attack">Adversarial Patch Attack</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="model-type" class="form-label">Select Model Type:</label>
                     <select id="model-type" class="form-control">
                         <option value="normal">Normal Model</option>
                         <option value="modified">Modified Model</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="signs" class="form-label" >Select Traffic Sign:</label>
                     <select id="signs" name="signs" class="form-control">
                         {% for sign in list_signs %}
@@ -43,6 +43,11 @@
                         {% endfor %}
                     </select>
                 </div>
+                <div class="col-md-3">
+                    <label for="perturbation-level" class="form-label">Select perturbation level:</label>
+                    <input type="range" class="form-range" id="range" min="0" max="1" step="0.01" value="0.5">
+                    <span id="range-value">0.5</span>
+                </div>                
             </div>
     
             <div class="row">
@@ -76,6 +81,9 @@
         <p>Created with HTML and CSS</p>
     </footer>
     <script>
+        document.getElementById("range").oninput = function() {
+        document.getElementById("range-value").innerHTML = this.value;
+        }
 
         function previewImage(inputId, previewId) {
             var preview = document.getElementById(previewId);
@@ -100,11 +108,13 @@
             var label = document.getElementById("signs").value;
             var formData = new FormData();
             var signIndex = document.getElementById("signs").value;
-
+            var perturbation =  document.getElementById("range").value;
+            
             formData.append("signIndex", signIndex);
             formData.append("modelType", modelType);
             formData.append("label", label);
             formData.append("image1", document.getElementById("image1").files[0]);
+            formData.append("add_pertubation", perturbation)
 
             fetch('/applyIntrusion', {
                 method: 'POST',

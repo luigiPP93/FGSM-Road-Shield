@@ -61,6 +61,9 @@ def applyIntrusion():
     if request.method == 'POST':
         model_type = request.form.get('modelType')
         image1 = request.files.get('image1')
+       # Ottieni il valore del livello di perturbazione come float
+        add_pertubation = float(request.form.get("add_pertubation", "0.1"))  # Usa "0.1" come default
+        print("Pertubation value: ", add_pertubation)
         
         filename = image1.filename
         adversarial_filename = "adversarial_" + filename
@@ -83,7 +86,7 @@ def applyIntrusion():
         print(etichetta_one_hot)
         
         perturbations = fgsm.adversarial_pattern(img.reshape((1, img_rows, img_cols, channels)), etichetta_one_hot, model).numpy()
-        adversarial = img + perturbations * 0.1
+        adversarial = img + perturbations * add_pertubation
 
         # Salva l'immagine
         plt.figure()
