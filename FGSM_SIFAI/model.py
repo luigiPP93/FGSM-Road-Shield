@@ -18,7 +18,7 @@ np.random.seed(0)
 
 #Define the 4 layers model for sign prediction
 def modified_model(num_classes=43):
-    #model = Sequential()
+    model = Sequential()
     model.add(Conv2D(60,(5,5),input_shape=(32,32,3),activation='relu'))
     model.add(Conv2D(60,(5,5),activation='relu'))
     model.add(MaxPooling2D(pool_size=(2,2)))

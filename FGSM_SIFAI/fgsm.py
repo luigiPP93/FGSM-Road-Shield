@@ -1,7 +1,7 @@
 import pickle
 import pandas as pd
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import random
 import numpy as np
@@ -309,11 +309,11 @@ if __name__ == '__main__':
     
     #Train model
     model = fgsm.modified_model()
-    history = model.fit(datagen.flow(X_train,y_train, batch_size=50), steps_per_epoch = X_train.shape[0]/50, epochs = 10, validation_data= (X_val, y_val), shuffle = 1)
+    #history = model.fit(datagen.flow(X_train,y_train, batch_size=50), steps_per_epoch = X_train.shape[0]/50, epochs = 10, validation_data= (X_val, y_val), shuffle = 1)
     #print(model.summary())
-    save_model(model,history)
+    #save_model(model,history)
     
-    #model,history=load_the_model()
+    model,history=load_the_model()
     predictions = model.predict(X_test)
 
     # Valuta le prestazioni del modello sui nuovi dati, ad esempio calcolando l'accuratezza
@@ -327,9 +327,14 @@ if __name__ == '__main__':
     
     img_rows, img_cols, channels = 32, 32, 3
     image = X_test[3000]
+    plt.clf()
+    plt.axis("off")
+    plt.imshow(image.reshape((img_rows, img_cols, channels)))
+    plt.savefig('FGSM_SIFAI\static\img', bbox_inches='tight', pad_inches=0)
+    
     image_label = y_test[3000]
     print("image_lable",image_label)
-    print("image_lable",image_label.shape())
+    #print("image_lable",image_label.shape())
     perturbations = adversarial_pattern(image.reshape((1, img_rows, img_cols, channels)), image_label,model).numpy()
     adversarial = image + perturbations * 0.1
 
