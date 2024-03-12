@@ -68,7 +68,7 @@ def applyIntrusion():
         adversarial_save_path = os.path.join(app.config['UPLOAD_FOLDER'], adversarial_filename)
         image1.save(save_path)
         
-        img_rows, img_cols, channels = 32, 32, 1
+        img_rows, img_cols, channels = 32, 32, 3
         model, history = fgsm.load_the_model()  # Carica il tuo modello qui
         img = fgsm.load_image_from_file(save_path)  # Carica l'immagine per l'elaborazione
         
@@ -83,7 +83,7 @@ def applyIntrusion():
         print(etichetta_one_hot)
         
         perturbations = fgsm.adversarial_pattern(img.reshape((1, img_rows, img_cols, channels)), etichetta_one_hot, model).numpy()
-        adversarial = img + perturbations * 0.3
+        adversarial = img + perturbations * 0.1
 
         # Salva l'immagine
         plt.figure()

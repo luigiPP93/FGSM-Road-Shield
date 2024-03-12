@@ -98,9 +98,9 @@ def equalize(img):
   #equalize histogram extract reigon of interest very correctly
 
 def preprocess(img):
-    img = gray(img)
-    img = equalize(img)
-    img = img/255 #normalizing of images
+    #img = gray(img)
+    #img = equalize(img)
+    #img = img/255 #normalizing of images
     return img
 
 def view_image_processed(X_train):
@@ -120,11 +120,11 @@ def view_image_processed(X_train):
     
 def Reshape_mapped_and_preprocessed_images(X_train,X_test,X_val):
     #Reshape mapped and preprocessed images
-    X_train = X_train.reshape(34799, 32, 32, 1)
-    X_test = X_test.reshape(12630, 32, 32, 1)
-    X_val = X_val.reshape(4410, 32, 32, 1)
+    X_train = X_train.reshape(34799, 32, 32, 3)
+    X_test = X_test.reshape(12630, 32, 32, 3)
+    X_val = X_val.reshape(4410, 32, 32, 3)
 
-    img_rows, img_cols, channels = 32, 32, 1
+    img_rows, img_cols, channels = 32, 32, 3
 
     #Display dataset shape
     print(X_train.shape)
@@ -238,9 +238,9 @@ def load_image_from_file(file_or_filepath):
         # Esegui eventuali preelaborazioni sull'immagine (ad esempio, normalizzazione)
         img = preprocess(img)
         # Aggiungi una dimensione per la batch (se necessario)
-        img = img.reshape(32, 32)  # Rimuovi la dimensione della batch per la visualizzazione con Matplotlib
+        #img = img.reshape(32, 32,)  # Rimuovi la dimensione della batch per la visualizzazione con Matplotlib
         
-        img = img.reshape(1, 32, 32, 1)
+        img = img.reshape(1, 32, 32, 3)
    
     else:
         print("Errore nel caricamento dell'immagine")
@@ -302,11 +302,11 @@ if __name__ == '__main__':
     
     #Train model
     model = fgsm.modified_model()
-    #history = model.fit(datagen.flow(X_train,y_train, batch_size=50), steps_per_epoch = X_train.shape[0]/50, epochs = 10, validation_data= (X_val, y_val), shuffle = 1)
+    history = model.fit(datagen.flow(X_train,y_train, batch_size=50), steps_per_epoch = X_train.shape[0]/50, epochs = 10, validation_data= (X_val, y_val), shuffle = 1)
     #print(model.summary())
-    #save_model(model,history)
+    save_model(model,history)
     
-    model,history=load_the_model()
+    #model,history=load_the_model()
     predictions = model.predict(X_test)
 
     # Valuta le prestazioni del modello sui nuovi dati, ad esempio calcolando l'accuratezza
@@ -318,7 +318,7 @@ if __name__ == '__main__':
     img=load_image_from_file('FGSM_SIFAI\Screenshot 2024-03-02 103033.jpg')
     print(predict(model,img))
     
-    img_rows, img_cols, channels = 32, 32, 1
+    img_rows, img_cols, channels = 32, 32, 3
     image = X_test[3000]
     image_label = y_test[3000]
     print("image_lable",image_label)
