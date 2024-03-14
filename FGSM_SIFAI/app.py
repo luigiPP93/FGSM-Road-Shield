@@ -5,6 +5,7 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import cv2
 from flask import Flask, render_template, request, jsonify, url_for
 from tensorflow.keras.utils import to_categorical
 
@@ -87,7 +88,12 @@ def applyIntrusion():
         
         perturbations = fgsm.adversarial_pattern(img.reshape((1, img_rows, img_cols, channels)), etichetta_one_hot, model).numpy()
         adversarial = img + perturbations * add_pertubation
+        # Applica l'effetto di sfocatura a ciascun canale separatamente
+        #adversarial_blurred = np.zeros_like(adversarial)
+        for i in range(3):  # Presumendo che ci siano 3 canali
+            adversarial[:, :, i] = cv2.GaussianBlur(adversarial[:, :, i], (5, 5), 0)
 
+        # Usa l'immagine sfocata per il resto del tuo codice
         # Salva l'immagine
         plt.figure()
         

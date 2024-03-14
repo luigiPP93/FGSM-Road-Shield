@@ -1,7 +1,7 @@
 import pickle
 import pandas as pd
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import random
 import numpy as np
@@ -11,12 +11,17 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import load_model
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import model as fgsm
+import model_intrusion
 import tensorflow as tf
 import json
 from sklearn.metrics import confusion_matrix
 import numpy as np
 import requests
 from PIL import Image
+from keras.applications import VGG16
+from keras.models import Model
+from keras.layers import Dense, Flatten
+from keras.optimizers import Adam
 
 def readData():
         #opening pickle files and creating variables for testing, training and validation data
@@ -162,6 +167,11 @@ def save_model(model,history):
     model.save('FGSM_SIFAI/FGSM_modello.h5')
     with open('FGSM_SIFAI/history/history.json', 'w') as f:
         json.dump(history.history, f)
+        
+def save_model2(model,history):
+    model.save('FGSM_SIFAI/FGSM_modello_intrusion2.h5')
+    with open('FGSM_SIFAI/history/history_intrusion2.json', 'w') as f:
+        json.dump(history.history, f)
 
 def load_the_model():
     model = load_model('FGSM_SIFAI/FGSM_modello.h5')
@@ -172,7 +182,16 @@ def load_the_model():
         
     return model,history
 
-def confusion_metrix(X_test,y_test):
+def load_the_model2():
+    model = load_model('FGSM_SIFAI/FGSM_modello_intrusion.h5')
+
+    # Carica la storia dell'addestramento
+    with open('FGSM_SIFAI/history/history_intrusion.json', 'r') as f:
+        history = json.load(f)
+        
+    return model,history
+
+def confusion_metrix(X_test,y_test,model):
     y_pred = model.predict(X_test)
     # Converti le previsioni in classi predette
     y_pred_classes = np.argmax(y_pred, axis=1)
@@ -284,9 +303,27 @@ def adversarial_pattern(image, label,model):
         #print("lable",label)
         #print("prediction",prediction)
     gradient = tape.gradient(loss, image)
-    print("gradient",gradient)
+    #print("gradient",gradient)
     signed_grad = tf.sign(gradient)
     return signed_grad
+
+def generate_adversarials(model, y_train, X_train):
+    while True:
+        x = []
+        y = []
+        for image, label in zip(X_train, y_train):
+            perturbations = adversarial_pattern(image.reshape((1, img_rows, img_cols, channels)), label, model).numpy()
+            epsilon = 0.4
+            adversarial = image + perturbations * epsilon
+            x.append(adversarial)
+            y.append(label)
+        x = np.asarray(x).reshape((len(X_train), img_rows, img_cols, channels))
+        y = np.asarray(y)
+
+        yield x, y
+
+
+
 
 if __name__ == '__main__':
     import sys
@@ -319,18 +356,18 @@ if __name__ == '__main__':
     # Valuta le prestazioni del modello sui nuovi dati, ad esempio calcolando l'accuratezza
     accuracy = model.evaluate(X_test, y_test)
     print('Accuracy:', accuracy)
-    y_pred,y_pred_classes,y_true,confusion_mtx=confusion_metrix(X_test,y_test)
+    y_pred,y_pred_classes,y_true,confusion_mtx=confusion_metrix(X_test,y_test,model)
     metriche(y_pred_classes,y_true)
     plot_metrics(history)
     img=load_image_from_file('FGSM_SIFAI\Screenshot 2024-03-02 103033.jpg')
     print(predict(model,img))
     
     img_rows, img_cols, channels = 32, 32, 3
-    image = X_test[3000]
+    image = X_test[6000]
     plt.clf()
     plt.axis("off")
     plt.imshow(image.reshape((img_rows, img_cols, channels)))
-    plt.savefig('FGSM_SIFAI\static\img', bbox_inches='tight', pad_inches=0)
+    plt.savefig('FGSM_SIFAI\static\img3', bbox_inches='tight', pad_inches=0)
     
     image_label = y_test[3000]
     print("image_lable",image_label)
@@ -348,8 +385,96 @@ if __name__ == '__main__':
 
     plt.show()
     
+    x_adversarial_train, y_adversarial_train = next(generate_adversarials(model,y_train,X_train))
+    x_adversarial_val, y_adversarial_val = next(generate_adversarials(model,y_val,X_val))
+    x_adversarial_test, y_adversarial_test = next(generate_adversarials(model,y_test,X_test))
+    
+    # Salvataggio dei dati su disco
+    np.save('FGSM_SIFAI/dati_modificati/x_adversarial_train2.npy', x_adversarial_train)
+    np.save('FGSM_SIFAI/dati_modificati/y_adversarial_train2.npy', y_adversarial_train)
+    np.save('FGSM_SIFAI/dati_modificati/x_adversarial_val2.npy', x_adversarial_val)
+    np.save('FGSM_SIFAI/dati_modificati/y_adversarial_val2.npy', y_adversarial_val)
+    np.save('FGSM_SIFAI/dati_modificati/x_adversarial_test2.npy', x_adversarial_test)
+    np.save('FGSM_SIFAI/dati_modificati/y_adversarial_test2.npy', y_adversarial_test)
+
+    #x_adversarial_train = np.load('FGSM_SIFAI/dati_modificati/x_adversarial_train.npy')
+    #y_adversarial_train = np.load('FGSM_SIFAI/dati_modificati/y_adversarial_train.npy')
+    #x_adversarial_test = np.load('FGSM_SIFAI/dati_modificati/x_adversarial_test.npy')
+    #y_adversarial_test = np.load('FGSM_SIFAI/dati_modificati/y_adversarial_test.npy')
+    
+    import numpy as np
+
+    # Unione dei dati adversariali con i dati originali
+    x_combined_train = np.concatenate((X_train, x_adversarial_train), axis=0)
+    y_combined_train = np.concatenate((y_train, y_adversarial_train), axis=0)
+    
+    x_combined_val = np.concatenate((X_val, x_adversarial_val), axis=0)
+    y_combined_val = np.concatenate((y_val, y_adversarial_val), axis=0)
+    
+    x_combined_test = np.concatenate((X_test, x_adversarial_test), axis=0)
+    y_combined_test = np.concatenate((y_test, y_adversarial_test), axis=0)
+    # Creazione del modello
     
     
+    import numpy as np
+
+# Controlla le dimensioni di y_combined_train e y_combined_val
+    print("Dimensioni di y_combined_train:", y_combined_train.shape)
+    print("Dimensioni di y_combined_val:", y_combined_val.shape)
+
+    # Verifica se le dimensioni di y_combined_train e y_combined_val sono corrette
+    num_classi = 43  # Sostituisci con il numero corretto di classi nel tuo problema
+    if y_combined_train.shape[1] != num_classi or y_combined_val.shape[1] != num_classi:
+        print("Errore: Le dimensioni di y_combined_train o y_combined_val non sono corrette.")
+    else:
+        print("Le dimensioni di y_combined_train e y_combined_val sono corrette.")
+
+    defence_model=model_intrusion.create_robust_model()
+    # Addestramento del modello con dati combinati
+    combined_history = model.fit(datagen.flow(x_combined_train, y_combined_train, batch_size=50), steps_per_epoch=x_combined_train.shape[0]/50, epochs=20, validation_data=(x_combined_val, y_combined_val), shuffle=1)
+    save_model2(model,combined_history)
+    #defence_model,combined_history=load_the_model2()
+    accuracy = defence_model.evaluate(X_test, y_test)
+    print('Accuracy:', accuracy)
+    y_pred,y_pred_classes,y_true,confusion_mtx=confusion_metrix(X_test,y_test,defence_model)
+    metriche(y_pred_classes,y_true)
+    # Taking example of 20km/h before and after creating new defence model
+    image = X_train[500]
+    image_label = y_train[500]
+    perturbations = adversarial_pattern(image.reshape((1, img_rows, img_cols, channels)), image_label,model).numpy()
+    adversarial = image + perturbations * 0.4
+
+    print("Model Prediction on original image = ",list_signs[model.predict(image.reshape((1, img_rows, img_cols, channels))).argmax()])
+    print("Defence Model Prediction on intrusion image = ", list_signs[defence_model.predict(adversarial).argmax()])
+
+    if channels == 1:
+        plt.imshow(adversarial.reshape((img_rows, img_cols)))
+    else:
+        plt.imshow(adversarial.reshape((img_rows, img_cols, channels)))
+
+    plt.show()
     
     
-    
+
+    # Carica il modello VGG16 pre-addestrato
+    #base_model = VGG16(weights='imagenet', include_top=False, input_shape=(img_rows, img_cols, channels))
+
+    # Congela tutti gli strati del modello base
+    #for layer in base_model.layers:
+    #    layer.trainable = False
+
+    # Aggiungi nuovi livelli di output
+    #x = base_model.output
+    #x = Flatten()(x)
+    #x = Dense(256, activation='relu')(x)
+    #predictions = Dense(43, activation='softmax')(x)
+
+    # Modello finale
+    #modelPreso = Model(inputs=base_model.input, outputs=predictions)
+
+    # Compilazione del modello
+    #modelPreso.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy', metrics=['accuracy'])
+
+    # Addestramento del modello
+    #modelPreso.fit(x_combined_train, y_combined_train, epochs=10, batch_size=32, validation_data=(X_val, y_val))
+    #accuracy = modelPreso.evaluate(X_test, y_test)
