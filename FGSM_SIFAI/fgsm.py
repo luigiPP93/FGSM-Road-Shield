@@ -169,8 +169,8 @@ def save_model(model,history):
         json.dump(history.history, f)
         
 def save_model2(model,history):
-    model.save('FGSM_SIFAI/FGSM_modello_intrusion2.h5')
-    with open('FGSM_SIFAI/history/history_intrusion2.json', 'w') as f:
+    model.save('FGSM_SIFAI/FGSM_modello_intrusion.h5')
+    with open('FGSM_SIFAI/history/history_intrusion.json', 'w') as f:
         json.dump(history.history, f)
 
 def load_the_model():
@@ -385,22 +385,26 @@ if __name__ == '__main__':
 
     plt.show()
     
-    x_adversarial_train, y_adversarial_train = next(generate_adversarials(model,y_train,X_train))
-    x_adversarial_val, y_adversarial_val = next(generate_adversarials(model,y_val,X_val))
-    x_adversarial_test, y_adversarial_test = next(generate_adversarials(model,y_test,X_test))
+    #x_adversarial_train, y_adversarial_train = next(generate_adversarials(model,y_train,X_train))
+    #x_adversarial_val, y_adversarial_val = next(generate_adversarials(model,y_val,X_val))
+    #x_adversarial_test, y_adversarial_test = next(generate_adversarials(model,y_test,X_test))
     
     # Salvataggio dei dati su disco
-    np.save('FGSM_SIFAI/dati_modificati/x_adversarial_train2.npy', x_adversarial_train)
-    np.save('FGSM_SIFAI/dati_modificati/y_adversarial_train2.npy', y_adversarial_train)
-    np.save('FGSM_SIFAI/dati_modificati/x_adversarial_val2.npy', x_adversarial_val)
-    np.save('FGSM_SIFAI/dati_modificati/y_adversarial_val2.npy', y_adversarial_val)
-    np.save('FGSM_SIFAI/dati_modificati/x_adversarial_test2.npy', x_adversarial_test)
-    np.save('FGSM_SIFAI/dati_modificati/y_adversarial_test2.npy', y_adversarial_test)
+    #np.save('FGSM_SIFAI/dati_modificati/x_adversarial_train.npy', x_adversarial_train)
+    #np.save('FGSM_SIFAI/dati_modificati/y_adversarial_train.npy', y_adversarial_train)
+    #np.save('FGSM_SIFAI/dati_modificati/x_adversarial_val.npy', x_adversarial_val)
+    #np.save('FGSM_SIFAI/dati_modificati/y_adversarial_val.npy', y_adversarial_val)
+    #np.save('FGSM_SIFAI/dati_modificati/x_adversarial_test.npy', x_adversarial_test)
+    #np.save('FGSM_SIFAI/dati_modificati/y_adversarial_test.npy', y_adversarial_test)
 
-    #x_adversarial_train = np.load('FGSM_SIFAI/dati_modificati/x_adversarial_train.npy')
-    #y_adversarial_train = np.load('FGSM_SIFAI/dati_modificati/y_adversarial_train.npy')
-    #x_adversarial_test = np.load('FGSM_SIFAI/dati_modificati/x_adversarial_test.npy')
-    #y_adversarial_test = np.load('FGSM_SIFAI/dati_modificati/y_adversarial_test.npy')
+    x_adversarial_train = np.load('FGSM_SIFAI/dati_modificati/x_adversarial_train.npy')
+    y_adversarial_train = np.load('FGSM_SIFAI/dati_modificati/y_adversarial_train.npy')
+    
+    x_adversarial_val = np.load('FGSM_SIFAI/dati_modificati/x_adversarial_val.npy')
+    y_adversarial_val = np.load('FGSM_SIFAI/dati_modificati/y_adversarial_val.npy')
+    
+    x_adversarial_test = np.load('FGSM_SIFAI/dati_modificati/x_adversarial_test.npy')
+    y_adversarial_test = np.load('FGSM_SIFAI/dati_modificati/y_adversarial_test.npy')
     
     import numpy as np
 
@@ -415,32 +419,18 @@ if __name__ == '__main__':
     y_combined_test = np.concatenate((y_test, y_adversarial_test), axis=0)
     # Creazione del modello
     
-    
-    import numpy as np
-
-# Controlla le dimensioni di y_combined_train e y_combined_val
-    print("Dimensioni di y_combined_train:", y_combined_train.shape)
-    print("Dimensioni di y_combined_val:", y_combined_val.shape)
-
-    # Verifica se le dimensioni di y_combined_train e y_combined_val sono corrette
-    num_classi = 43  # Sostituisci con il numero corretto di classi nel tuo problema
-    if y_combined_train.shape[1] != num_classi or y_combined_val.shape[1] != num_classi:
-        print("Errore: Le dimensioni di y_combined_train o y_combined_val non sono corrette.")
-    else:
-        print("Le dimensioni di y_combined_train e y_combined_val sono corrette.")
-
     defence_model=model_intrusion.create_robust_model()
     # Addestramento del modello con dati combinati
-    combined_history = model.fit(datagen.flow(x_combined_train, y_combined_train, batch_size=50), steps_per_epoch=x_combined_train.shape[0]/50, epochs=20, validation_data=(x_combined_val, y_combined_val), shuffle=1)
-    save_model2(model,combined_history)
-    #defence_model,combined_history=load_the_model2()
-    accuracy = defence_model.evaluate(X_test, y_test)
+    #combined_history = defence_model.fit(datagen.flow(x_combined_train, y_combined_train, batch_size=50), steps_per_epoch=x_combined_train.shape[0]/50, epochs=10, validation_data=(x_combined_val, y_combined_val), shuffle=1)
+    #save_model2(defence_model,combined_history)
+    defence_model,combined_history=load_the_model2()
+    accuracy = defence_model.evaluate(x_combined_test,y_combined_test )
     print('Accuracy:', accuracy)
-    y_pred,y_pred_classes,y_true,confusion_mtx=confusion_metrix(X_test,y_test,defence_model)
+    y_pred,y_pred_classes,y_true,confusion_mtx=confusion_metrix(x_combined_test,y_combined_test,defence_model)
     metriche(y_pred_classes,y_true)
     # Taking example of 20km/h before and after creating new defence model
-    image = X_train[500]
-    image_label = y_train[500]
+    image = X_train[1000]
+    image_label = y_train[1000]
     perturbations = adversarial_pattern(image.reshape((1, img_rows, img_cols, channels)), image_label,model).numpy()
     adversarial = image + perturbations * 0.4
 
