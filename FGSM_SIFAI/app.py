@@ -60,14 +60,13 @@ def applyIntrusion():
     list_signs = df['SignName'].tolist()
     
     if request.method == 'POST':
-        model_type = request.form.get('modelType')
         image1 = request.files.get('image1')
        # Ottieni il valore del livello di perturbazione come float
         add_pertubation = float(request.form.get("add_pertubation", "0.1"))  # Usa "0.1" come default
         print("Pertubation value: ", add_pertubation)
         
         filename = image1.filename
-        adversarial_filename = "adversarial_" + filename
+        adversarial_filename = "adversarial_img.png"
         save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         adversarial_save_path = os.path.join(app.config['UPLOAD_FOLDER'], adversarial_filename)
         image1.save(save_path)
@@ -108,7 +107,23 @@ def applyIntrusion():
         image_url = url_for('static', filename='img/' + adversarial_filename)
 
         return jsonify({'image_url': image_url, 'prediction': list_signs[model.predict(adversarial).argmax()]})
-       
+    
+@app.route('/predictWhitIntrusion', methods=['POST'])
+def predictWhitIntrusion():
+    if request.method == 'POST':
+        adversarial_filename = "adversarial_img.png"  # Definisci il nome del file separatamente
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], adversarial_filename)  # Utilizza il nome del file per creare il percorso
+        print("path", filepath)
+        model, history = fgsm.load_the_model2()
+        img = fgsm.load_image_from_file(filepath)
+        predizione = fgsm.predict(model, img)
+        print("Predizione", predizione)
+        # os.remove(filepath)
+
+        return str(predizione)
+    
+    
+    
 if __name__ == '__main__':
     import sys
     #print(sys.executable)

@@ -60,16 +60,21 @@
                 </div>
                 <div class="col-md-6">
                     <h2>Image with Intrusion:</h2>
+                    <div id="prediction-result-base" class="m-2"></div>
                     <div id="prediction-result" class="m-2"></div>
                     <div class="image-container placeholder" style="width: 200px; height: 200px; overflow: hidden;">
                         <img id="preview2" src="" alt="Intrusion image preview" style="width: 100%; height: 100%; object-fit: cover;" class="img-fluid">
                     </div>
+                    <div id="prediction-result-intrusion" class="m-2"></div>
                 </div>
             </div>
         </div>
         <div class="row mt-4">
             <div class="col-md-6 text-center">
                 <button class="btn btn-primary btn-lg" onclick="ApplyIntrusion()">Apply Intrusion</button>
+            </div>
+            <div class="col-md-6 text-center">
+                <button class="btn btn-primary btn-lg" onclick="Predict_With_Intrusion()">Predict with defence model</button>
             </div>
             <div class="col-md-6 text-center">
                 <button class="btn btn-primary btn-lg" onclick="predictResult()">Predict Result</button>
@@ -143,6 +148,26 @@
             });
         }
 
+        function Predict_With_Intrusion() {
+        var modelType = document.getElementById("model-type").value;
+        var formData = new FormData();
+
+        formData.append("modelType", modelType);
+        console.log("ciao")
+        fetch('/predictWhitIntrusion', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('prediction-result-intrusion').innerText = data;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+
 
         function predictResult() {
             var modelType = document.getElementById("model-type").value;
@@ -157,7 +182,7 @@
             })
             .then(response => response.text())
             .then(data => {
-                document.getElementById('prediction-result').innerText = data;
+                document.getElementById('prediction-result-base').innerText = data;
             })
             .catch(error => {
                 console.error('Error:', error);
