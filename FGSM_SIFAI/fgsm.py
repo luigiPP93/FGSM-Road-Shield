@@ -322,7 +322,35 @@ def generate_adversarials(model, y_train, X_train):
 
         yield x, y
 
+def TestModel(X_train, y_train,model,defence_model,list_signs):
+    # Create test sample with 10 only attacked image and predict right label
+    test_set = datagen.flow(X_train, y_train, batch_size = 10)
+    X_test_set, y_test_set = next(test_set)
+    d2 = 0
+    nd2 = 0
+    for X_test_set, y_test_set in zip(X_test_set, y_test_set):
+            perturbations = adversarial_pattern(X_test_set.reshape((1, img_rows, img_cols, channels)), y_test_set,model).numpy()
+            adversarial = X_test_set + perturbations * 0.4
+            Model_Prediction = list_signs[model.predict(adversarial.reshape((1, img_rows, img_cols, channels))).argmax()]
+            Truth_label = list_signs[y_test_set.argmax()]
+            print('Model Prediction:', Model_Prediction,",", 'Truth label:', Truth_label)
+            if channels == 1:
+                plt.imshow(X_test_set.reshape(img_rows, img_cols))
+            else:
+                plt.imshow(X_test_set)
+            plt.show()
 
+            if Model_Prediction != Truth_label:
+                Defence_Model = list_signs[defence_model.predict(adversarial.reshape((1, img_rows, img_cols, channels))).argmax()]
+                print("Image was attacked")
+                if Defence_Model == Truth_label:
+                    print("Defence Model prediction:", Defence_Model)
+                    d2=d2+1
+                else:
+                    print("Can not detect correctly")
+                    nd2=nd2+1
+    print("Number of correct defence predictions",d2)
+    print("Number of not detected predictions",nd2)
 
 
 if __name__ == '__main__':
@@ -424,7 +452,9 @@ if __name__ == '__main__':
     #combined_history = defence_model.fit(datagen.flow(x_combined_train, y_combined_train, batch_size=50), steps_per_epoch=x_combined_train.shape[0]/50, epochs=10, validation_data=(x_combined_val, y_combined_val), shuffle=1)
     #save_model2(defence_model,combined_history)
     defence_model,combined_history=load_the_model2()
+    plot_metrics(combined_history)
     accuracy = defence_model.evaluate(x_combined_test,y_combined_test )
+    
     print('Accuracy:', accuracy)
     y_pred,y_pred_classes,y_true,confusion_mtx=confusion_metrix(x_combined_test,y_combined_test,defence_model)
     metriche(y_pred_classes,y_true)
@@ -444,7 +474,7 @@ if __name__ == '__main__':
 
     plt.show()
     
-    
+    TestModel(X_train, y_train,model,defence_model,list_signs)
 
     # Carica il modello VGG16 pre-addestrato
     #base_model = VGG16(weights='imagenet', include_top=False, input_shape=(img_rows, img_cols, channels))
