@@ -22,6 +22,10 @@ from keras.applications import VGG16
 from keras.models import Model
 from keras.layers import Dense, Flatten
 from keras.optimizers import Adam
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.metrics import confusion_matrix
 
 def readData():
         #opening pickle files and creating variables for testing, training and validation data
@@ -191,20 +195,27 @@ def load_the_model2():
         
     return model,history
 
-def confusion_metrix(X_test,y_test,model):
+def confusion_metrix(X_test, y_test, model):
+    # Effettua le previsioni sul set di test
     y_pred = model.predict(X_test)
-    # Converti le previsioni in classi predette
+    
+    # Converti le previsioni e le etichette reali da one-hot a classi intere
     y_pred_classes = np.argmax(y_pred, axis=1)
-    # Converti le etichette reali in classi reali
     y_true = np.argmax(y_test, axis=1)
 
     # Calcola la matrice di confusione
     confusion_mtx = confusion_matrix(y_true, y_pred_classes)
 
-    # Ora puoi stampare la matrice di confusione
-    print(confusion_mtx)
-    
-    return y_pred,y_pred_classes,y_true,confusion_mtx
+    # Visualizza la matrice di confusione
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(confusion_mtx, annot=True, fmt='d', cmap="magma")
+    plt.title('Confusion Matrix')
+    plt.xlabel('Predicted Labels')
+    plt.ylabel('True Labels')
+    plt.show()
+
+    # Ritorna i valori calcolati per ulteriori analisi, se necessario
+    return y_pred, y_pred_classes, y_true, confusion_mtx
     
 def metriche(y_pred_classes,y_true):
     # Calcola l'accuratezza
