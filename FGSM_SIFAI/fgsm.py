@@ -1,7 +1,8 @@
 import pickle
 import pandas as pd
 import matplotlib
-matplotlib.use('Agg')
+import seaborn as sns
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import random
 import numpy as np
@@ -206,16 +207,17 @@ def confusion_metrix(X_test, y_test, model):
     # Calcola la matrice di confusione
     confusion_mtx = confusion_matrix(y_true, y_pred_classes)
 
-    # Visualizza la matrice di confusione
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(confusion_mtx, annot=True, fmt='d', cmap="magma")
-    plt.title('Confusion Matrix')
-    plt.xlabel('Predicted Labels')
-    plt.ylabel('True Labels')
+    # Ora puoi stampare la matrice di confusione
+    print(confusion_mtx)
+    
+    plt.figure(figsize=(15,10))  # Aumenta le dimensioni del grafico
+    sns.heatmap(confusion_mtx, annot=True, fmt='d', cmap='Blues', annot_kws={"size": 10})  # Riduci la dimensione del testo
+    plt.xlabel('Predicted')
+    plt.ylabel('Truth')
     plt.show()
+    
+    return y_pred,y_pred_classes,y_true,confusion_mtx
 
-    # Ritorna i valori calcolati per ulteriori analisi, se necessario
-    return y_pred, y_pred_classes, y_true, confusion_mtx
     
 def metriche(y_pred_classes,y_true):
     # Calcola l'accuratezza
@@ -366,7 +368,6 @@ def TestModel(X_train, y_train,model,defence_model,list_signs):
 
 if __name__ == '__main__':
     import sys
-    
     #print(sys.executable)
     data, X_train, y_train,X_val,X_test,y_test,y_val=readData()
     num_of_samples,num_classes,list_signs=visualization_of_image(data,X_train,y_train)
@@ -397,6 +398,10 @@ if __name__ == '__main__':
     print('Accuracy:', accuracy)
     y_pred,y_pred_classes,y_true,confusion_mtx=confusion_metrix(X_test,y_test,model)
     metriche(y_pred_classes,y_true)
+   
+
+    
+    
     plot_metrics(history)
     img=load_image_from_file('FGSM_SIFAI\Screenshot 2024-03-02 103033.jpg')
     print(predict(model,img))
@@ -509,3 +514,9 @@ if __name__ == '__main__':
     # Addestramento del modello
     #modelPreso.fit(x_combined_train, y_combined_train, epochs=10, batch_size=32, validation_data=(X_val, y_val))
     #accuracy = modelPreso.evaluate(X_test, y_test)
+    
+    #Performace modello base con quello non base
+    accuracy = model.evaluate(x_adversarial_test, y_test)
+    print('Accuracy:', accuracy)
+    y_pred,y_pred_classes,y_true,confusion_mtx=confusion_metrix(x_adversarial_test,y_test,model)
+    metriche(y_pred_classes,y_true)
