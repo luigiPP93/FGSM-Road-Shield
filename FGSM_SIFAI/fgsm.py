@@ -389,6 +389,72 @@ def TestModel(X_train, y_train,model,defence_model,list_signs):
     print("Number of not detected predictions",nd2)
 
 
+def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None):
+    # First, we create a model that maps the input image to the activations
+    # of the last conv layer as well as the output predictions
+    grad_model = tf.keras.models.Model(
+        [model.inputs], [model.get_layer(last_conv_layer_name).output, model.output]
+    )
+
+    # Then, we compute the gradient of the top predicted class for our input image
+    # with respect to the activations of the last conv layer
+    with tf.GradientTape() as tape:
+        last_conv_layer_output, preds = grad_model(img_array)
+        if pred_index is None:
+            pred_index = tf.argmax(preds[0])
+        class_channel = preds[:, pred_index]
+
+    # This is the gradient of the output neuron (top predicted or chosen)
+    # with respect to the output feature map of the last conv layer
+    grads = tape.gradient(class_channel, last_conv_layer_output)
+
+    # This is a vector where each entry is the mean intensity of the gradient
+    # over a specific feature map channel
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+
+    # We multiply each channel in the feature map array
+    # by "how important this channel is" with regard to the top predicted class
+    # then sum all the channels to obtain the heatmap class activation
+    last_conv_layer_output = last_conv_layer_output[0]
+    heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
+    heatmap = tf.squeeze(heatmap)
+
+    # For visualization purpose, we will also normalize the heatmap between 0 & 1
+    heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
+    return heatmap.numpy()
+
+from tensorflow.keras.preprocessing import image
+import matplotlib.cm as cm  # Add this import
+
+def display_gradcam(img_path, heatmap, alpha=0.3):
+    img = tf.keras.preprocessing.image.load_img(img_path)
+    img = tf.keras.preprocessing.image.img_to_array(img)
+
+    # Rescale heatmap to a range 0-255
+    heatmap = np.uint8(255 * heatmap)
+
+    # Use jet colormap to colorize heatmap
+    jet = cm.get_cmap("jet")
+
+    # Use RGB values of the colormap
+    jet_colors = jet(np.arange(256))[:, :3]
+    jet_heatmap = jet_colors[heatmap]
+
+    # Create an image with RGB colorized heatmap
+    jet_heatmap = tf.keras.preprocessing.image.array_to_img(jet_heatmap)
+    jet_heatmap = jet_heatmap.resize((img.shape[1], img.shape[0]))
+    jet_heatmap = tf.keras.preprocessing.image.img_to_array(jet_heatmap)
+
+    # Superimpose the heatmap on original image
+    superimposed_img = jet_heatmap * alpha + img
+    superimposed_img = tf.keras.preprocessing.image.array_to_img(superimposed_img)
+
+    # Display Heatmap
+    plt.figure(figsize=(5, 5))
+    plt.imshow(superimposed_img)
+    plt.axis("off")
+    plt.show()
+    
 if __name__ == '__main__':
     import sys
     classes = { 0:'Speed limit (20km/h)',
@@ -439,7 +505,7 @@ if __name__ == '__main__':
     data, X_train, y_train,X_val,X_test,y_test,y_val=readData()
     num_of_samples,num_classes,list_signs=visualization_of_image(data,X_train,y_train)
     print("lista segnaliiiiiii",list_signs)
-    datasetDistribution("/Users/alessiature/Desktop/Image-Perturbation-for-Visual-Security-Enhancement/FGSM_SIFAI/german-traffic-signs/train.p",num_classes,classes)
+    datasetDistribution("C:/Users/luigi/OneDrive/Documenti/GitHub/Image-Perturbation-for-Visual-Security-Enhancement/FGSM_SIFAI/german-traffic-signs/train.p",num_classes,classes)
     X_train = np.array(list(map(preprocess, X_train)))
     X_val = np.array(list(map(preprocess, X_val)))
     X_test = np.array(list(map(preprocess, X_test)))
@@ -457,7 +523,7 @@ if __name__ == '__main__':
                                                          # when executing a portion of the code.
 
 
-    tracker.start() # we tell CodeCarbon to start tracking
+    #tracker.start() # we tell CodeCarbon to start tracking
     model = fgsm.modified_model()
     #history = model.fit(datagen.flow(X_train,y_train, batch_size=50), steps_per_epoch = X_train.shape[0]/50, epochs = 10, validation_data= (X_val, y_val), shuffle = 1)
     #print(model.summary())
@@ -465,25 +531,38 @@ if __name__ == '__main__':
     
     model,history=load_the_model()
     predictions = model.predict(X_test)
+    path = 'FGSM_SIFAI\Screenshot 2024-03-02 103033.jpg'
+    image = cv2.imread(path)
+    resized = cv2.resize(image, (32, 32))
+    x = resized / 255.0
 
-    tracker.stop() # lastly, we stop the tracker
+    # Apply Gaussian blur
+    x = cv2.GaussianBlur(x, (5, 5), 0)
+    x = np.expand_dims(x, axis=0)
+    # Ottieni l'ultimo layer di convoluzione nel modello
+    last_conv_layer_name = [layer.name for layer in model.layers if 'conv' in layer.name][-1]
+    heatmap = make_gradcam_heatmap(x, model, last_conv_layer_name)  # last_conv_layer_name
 
-    emissions_csv = pd.read_csv("emissions.csv")
-    emissions_csv.columns
+    # Visualize it
+    display_gradcam(path, heatmap)
+    #tracker.stop() # lastly, we stop the tracker
 
-    last_emissions = emissions_csv.tail(1) # we get the tail (the last computed values)
+    #emissions_csv = pd.read_csv("emissions.csv")
+    #emissions_csv.columns
 
-    emissions = last_emissions["emissions"] * 1000
-    energy = last_emissions["energy_consumed"]
-    cpu = last_emissions["cpu_energy"]
-    gpu = last_emissions["gpu_energy"]
-    ram = last_emissions["ram_energy"]
+    #last_emissions = emissions_csv.tail(1) # we get the tail (the last computed values)
 
-    print(f"{emissions} Grams of CO2-equivalents")
-    print(f"{energy} Sum of cpu_energy, gpu_energy and ram_energy (kWh)")
-    print(f"{cpu} Energy used per CPU (kWh)")
-    print(f"{gpu} Energy used per GPU (kWh)")
-    print(f"{ram} Energy used per RAM (kWh)")
+    #emissions = last_emissions["emissions"] * 1000
+    #energy = last_emissions["energy_consumed"]
+    #cpu = last_emissions["cpu_energy"]
+    #gpu = last_emissions["gpu_energy"]
+    #ram = last_emissions["ram_energy"]
+
+    #print(f"{emissions} Grams of CO2-equivalents")
+    #print(f"{energy} Sum of cpu_energy, gpu_energy and ram_energy (kWh)")
+    #print(f"{cpu} Energy used per CPU (kWh)")
+    #print(f"{gpu} Energy used per GPU (kWh)")
+    #print(f"{ram} Energy used per RAM (kWh)")
 
     # Valuta le prestazioni del modello sui nuovi dati, ad esempio calcolando l'accuratezza
     accuracy = model.evaluate(X_test, y_test)
@@ -609,3 +688,5 @@ if __name__ == '__main__':
     print('Accuracy:', accuracy)
     y_pred,y_pred_classes,y_true,confusion_mtx=confusion_metrix(x_adversarial_test,y_test,model)
     metriche(y_pred_classes,y_true)
+    
+    
