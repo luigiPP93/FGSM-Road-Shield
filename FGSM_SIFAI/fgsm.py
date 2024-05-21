@@ -27,6 +27,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
+from codecarbon import OfflineEmissionsTracker 
 
 def readData():
         #opening pickle files and creating variables for testing, training and validation data
@@ -385,6 +386,12 @@ if __name__ == '__main__':
     y_val = to_categorical(y_val, 43)
     
     #Train model
+    tracker = OfflineEmissionsTracker(country_iso_code="ITA") # the tracker object will compute the
+                                                         # power consumption of our machine's components
+                                                         # when executing a portion of the code.
+
+
+    tracker.start() # we tell CodeCarbon to start tracking
     model = fgsm.modified_model()
     #history = model.fit(datagen.flow(X_train,y_train, batch_size=50), steps_per_epoch = X_train.shape[0]/50, epochs = 10, validation_data= (X_val, y_val), shuffle = 1)
     #print(model.summary())
@@ -392,6 +399,25 @@ if __name__ == '__main__':
     
     model,history=load_the_model()
     predictions = model.predict(X_test)
+
+    tracker.stop() # lastly, we stop the tracker
+
+    emissions_csv = pd.read_csv("emissions.csv")
+    emissions_csv.columns
+
+    last_emissions = emissions_csv.tail(1) # we get the tail (the last computed values)
+
+    emissions = last_emissions["emissions"] * 1000
+    energy = last_emissions["energy_consumed"]
+    cpu = last_emissions["cpu_energy"]
+    gpu = last_emissions["gpu_energy"]
+    ram = last_emissions["ram_energy"]
+
+    print(f"{emissions} Grams of CO2-equivalents")
+    print(f"{energy} Sum of cpu_energy, gpu_energy and ram_energy (kWh)")
+    print(f"{cpu} Energy used per CPU (kWh)")
+    print(f"{gpu} Energy used per GPU (kWh)")
+    print(f"{ram} Energy used per RAM (kWh)")
 
     # Valuta le prestazioni del modello sui nuovi dati, ad esempio calcolando l'accuratezza
     accuracy = model.evaluate(X_test, y_test)
