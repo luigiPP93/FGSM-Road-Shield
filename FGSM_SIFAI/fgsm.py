@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
 from codecarbon import OfflineEmissionsTracker 
+import os
 
 def readData():
         #opening pickle files and creating variables for testing, training and validation data
@@ -84,18 +85,39 @@ def visualization_of_image(data, X_train, y_train):
     plt.show()
     return num_of_samples, num_classes, list_signs
 
-def datasetDistribution(num_of_samples,num_classes):
-    print(num_of_samples)
-    sum = 0
-    for i in range(len(num_of_samples)):
-        sum = sum + num_of_samples[i]
-    print(sum)
+def datasetDistribution(file_path, num_classes, class_names):
+    # Carica il file pickle
+    with open(file_path, 'rb') as f:
+        data = pickle.load(f)
+    
+    # Estrarre le etichette delle classi
+    labels = data['labels']
+    
+    # Contare il numero di immagini per ciascuna classe
+    train_number = [0] * num_classes
+    for label in labels:
+        train_number[label] += 1
 
-    plt.figure(figsize=(12,4))
-    plt.bar(range(0, num_classes), num_of_samples)
-    plt.title("Distribiution of the training dataset")
-    plt.xlabel("Class number")
-    plt.ylabel("Number of images")
+    # Generare i nomi delle classi
+    class_num = [class_names[i] for i in range(num_classes)]
+
+    print(train_number)
+    total_images = sum(train_number)
+    print(total_images)
+
+    # Plotting the number of images in each class
+    plt.figure(figsize=(15,8))
+    plt.bar(class_num, train_number)
+    
+    # Regolare le etichette
+    plt.xticks(rotation=90, ha='right', fontsize=12)  # Inclinare le etichette e aumentare la dimensione del font
+    plt.yticks(fontsize=12)  # Aumentare la dimensione del font per l'asse y
+    
+    plt.title("Distribution of the training dataset", fontsize=16)
+    plt.xlabel("Class", fontsize=14)
+    plt.ylabel("Number of images", fontsize=14)
+    
+    plt.tight_layout()  # Migliora il layout per evitare che le etichette siano tagliate
     plt.show()
     
 #converting image into gray scale so that neural network can learn the pattern easily
@@ -369,11 +391,55 @@ def TestModel(X_train, y_train,model,defence_model,list_signs):
 
 if __name__ == '__main__':
     import sys
+    classes = { 0:'Speed limit (20km/h)',
+            1:'Speed limit (30km/h)',
+            2:'Speed limit (50km/h)',
+            3:'Speed limit (60km/h)',
+            4:'Speed limit (70km/h)',
+            5:'Speed limit (80km/h)',
+            6:'End of speed limit (80km/h)',
+            7:'Speed limit (100km/h)',
+            8:'Speed limit (120km/h)',
+            9:'No passing',
+            10:'No passing veh over 3.5 tons',
+            11:'Right-of-way at intersection',
+            12:'Priority road',
+            13:'Yield',
+            14:'Stop',
+            15:'No vehicles',
+            16:'Veh > 3.5 tons prohibited',
+            17:'No entry',
+            18:'General caution',
+            19:'Dangerous curve left',
+            20:'Dangerous curve right',
+            21:'Double curve',
+            22:'Bumpy road',
+            23:'Slippery road',
+            24:'Road narrows on the right',
+            25:'Road work',
+            26:'Traffic signals',
+            27:'Pedestrians',
+            28:'Children crossing',
+            29:'Bicycles crossing',
+            30:'Beware of ice/snow',
+            31:'Wild animals crossing',
+            32:'End speed + passing limits',
+            33:'Turn right ahead',
+            34:'Turn left ahead',
+            35:'Ahead only',
+            36:'Go straight or right',
+            37:'Go straight or left',
+            38:'Keep right',
+            39:'Keep left',
+            40:'Roundabout mandatory',
+            41:'End of no passing',
+            42:'End no passing veh > 3.5 tons' }
+    
     #print(sys.executable)
     data, X_train, y_train,X_val,X_test,y_test,y_val=readData()
     num_of_samples,num_classes,list_signs=visualization_of_image(data,X_train,y_train)
     print("lista segnaliiiiiii",list_signs)
-    datasetDistribution(num_of_samples,num_classes)
+    datasetDistribution("/Users/alessiature/Desktop/Image-Perturbation-for-Visual-Security-Enhancement/FGSM_SIFAI/german-traffic-signs/train.p",num_classes,classes)
     X_train = np.array(list(map(preprocess, X_train)))
     X_val = np.array(list(map(preprocess, X_val)))
     X_test = np.array(list(map(preprocess, X_test)))
@@ -425,9 +491,6 @@ if __name__ == '__main__':
     y_pred,y_pred_classes,y_true,confusion_mtx=confusion_metrix(X_test,y_test,model)
     metriche(y_pred_classes,y_true)
    
-
-    
-    
     plot_metrics(history)
     img=load_image_from_file('FGSM_SIFAI\Screenshot 2024-03-02 103033.jpg')
     print(predict(model,img))
