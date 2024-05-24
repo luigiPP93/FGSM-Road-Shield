@@ -29,13 +29,6 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label for="model-type" class="form-label">Select Model Type:</label>
-                    <select id="model-type" class="form-control">
-                        <option value="normal">Normal Model</option>
-                        <option value="modified">Modified Model</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
                     <label for="signs" class="form-label" >Select Traffic Sign:</label>
                     <select id="signs" name="signs" class="form-control">
                         {% for sign in list_signs %}
@@ -60,6 +53,7 @@
                     <div id="prediction-result-base" class="m-2"></div>
                 </div>
 
+
                 <div class="text-center align-self-center">
                     <button class="btn btn-primary btn-lg" onclick="ApplyIntrusion()">Apply Intrusion</button>
                     <div class="d-flex justify-content-center mt-3">
@@ -72,10 +66,13 @@
 
                 <div class="pl-5">
                     <h2>Image with Intrusion:</h2>
-                    <div id="prediction-result" class="m-2"></div>
+                    
                     <div class="image-container placeholder" style="width: 200px; height: 200px; overflow: hidden;">
                         <img id="preview2" src="" alt="Intrusion image preview" style="width: 100%; height: 100%; object-fit: cover;" class="img-fluid">
                     </div>
+                    <div id="prediction-result" class="m-2">
+                    </div>
+
                     <div id="prediction-result-intrusion" class="m-2"></div>
                 </div>
             </div>
@@ -120,14 +117,13 @@
         function ApplyIntrusion() {
             document.getElementById('loadingSpinner').style.display = 'block'
 
-            var modelType = document.getElementById("model-type").value;
             var label = document.getElementById("signs").value;
             var formData = new FormData();
             var signIndex = document.getElementById("signs").value;
             var perturbation =  document.getElementById("range").value;
             
             formData.append("signIndex", signIndex);
-            formData.append("modelType", modelType);
+
             formData.append("label", label);
             formData.append("image1", document.getElementById("image1").files[0]);
             formData.append("add_pertubation", perturbation)
@@ -155,6 +151,7 @@
                 // Aggiorna il risultato della previsione nell'HTML
                 document.getElementById('prediction-result').innerText = data.prediction;
 
+
                 document.getElementById('loadingSpinner').style.display = 'none'
             })
             .catch(error => {
@@ -164,10 +161,9 @@
         }
 
         function Predict_With_Intrusion() {
-        var modelType = document.getElementById("model-type").value;
+
         var formData = new FormData();
 
-        formData.append("modelType", modelType);
         console.log("ciao")
         fetch('/predictWhitIntrusion', {
             method: 'POST',
@@ -182,13 +178,9 @@
         });
     }
 
-
-
         function predictResult() {
-            var modelType = document.getElementById("model-type").value;
             var formData = new FormData();
 
-            formData.append("modelType", modelType);
             formData.append("image1", document.getElementById("image1").files[0]);
 
             fetch('/predict', {

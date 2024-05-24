@@ -22,7 +22,7 @@ def index():
 @app.route('/predict', methods=['POST'])
 def predict():
     if request.method == 'POST':
-        model_type = request.form['modelType']
+
         image1 = request.files['image1']
         #image2 = request.files['image2']
         
@@ -32,7 +32,7 @@ def predict():
         print("path",filepath)
     
         # Fai quello che vuoi fare con le immagini qui, come stamparle sul terminale
-        print("Model Type:", model_type)
+
         print("Image 1:", image1)
         #print("Image 2:", image2)
         
