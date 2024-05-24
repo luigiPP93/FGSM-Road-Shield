@@ -51,16 +51,27 @@
             </div>
     
             <div class="row">
-                <div class="col-md-6">
-                    <h2>Original Image:</h2>
-                    <input type="file" id="image1" class="form-control-sm " accept="image/*" onchange="previewImage('image1', 'preview1')">
+                <div class="">
+                    <h2>Original Image:</h2>                
                     <div class="image-container placeholder" style="width: 200px; height: 200px; overflow: hidden;">
                         <img id="preview1" src="#" alt="Image preview" style="width: 100%; height: 100%; object-fit: cover;" class="img-fluid">
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <h2>Image with Intrusion:</h2>
+                    <input type="file" id="image1" class="form-control-sm " accept="image/*" onchange="previewImage('image1', 'preview1')">
                     <div id="prediction-result-base" class="m-2"></div>
+                </div>
+
+                <div class="text-center align-self-center">
+                    <button class="btn btn-primary btn-lg" onclick="ApplyIntrusion()">Apply Intrusion</button>
+                    <div class="d-flex justify-content-center mt-3">
+                        <div class="spinner-border text-primary" id="loadingSpinner" style="display: none;" role="status">
+                          <span class="sr-only">Loading...</span>
+                        </div>
+                      </div>
+                </div>
+                
+
+                <div class="pl-5">
+                    <h2>Image with Intrusion:</h2>
                     <div id="prediction-result" class="m-2"></div>
                     <div class="image-container placeholder" style="width: 200px; height: 200px; overflow: hidden;">
                         <img id="preview2" src="" alt="Intrusion image preview" style="width: 100%; height: 100%; object-fit: cover;" class="img-fluid">
@@ -71,13 +82,11 @@
         </div>
         <div class="row mt-4">
             <div class="col-md-6 text-center">
-                <button class="btn btn-primary btn-lg" onclick="ApplyIntrusion()">Apply Intrusion</button>
+                <button class="btn btn-primary btn-lg" onclick="predictResult()">Predict Result</button>
             </div>
+
             <div class="col-md-6 text-center">
                 <button class="btn btn-primary btn-lg" onclick="Predict_With_Intrusion()">Predict with defence model</button>
-            </div>
-            <div class="col-md-6 text-center">
-                <button class="btn btn-primary btn-lg" onclick="predictResult()">Predict Result</button>
             </div>
         </div>
     </main>
@@ -109,6 +118,8 @@
         }
 
         function ApplyIntrusion() {
+            document.getElementById('loadingSpinner').style.display = 'block'
+
             var modelType = document.getElementById("model-type").value;
             var label = document.getElementById("signs").value;
             var formData = new FormData();
@@ -135,6 +146,7 @@
                 }
             })
             .then(data => {
+                
                 // Aggiungi un timestamp all'URL per evitare la cache del browser
                 var newImageUrl = data.image_url + "?t=" + new Date().getTime();
                 
@@ -142,9 +154,12 @@
                 document.getElementById("preview2").src = newImageUrl;
                 // Aggiorna il risultato della previsione nell'HTML
                 document.getElementById('prediction-result').innerText = data.prediction;
+
+                document.getElementById('loadingSpinner').style.display = 'none'
             })
             .catch(error => {
                 console.error('Error:', error);
+                document.getElementById('loadingSpinner').style.display = 'none'
             });
         }
 
