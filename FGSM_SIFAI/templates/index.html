@@ -28,7 +28,7 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label for="signs" class="form-label" >Select Traffic Sign:</label>
+                    <label for="signs" class="form-label">Select Traffic Sign:</label>
                     <select id="signs" name="signs" class="form-control custom-select">
                         {% for sign in list_signs %}
                         <option value="{{ loop.index0 }}">{{ sign }}</option>
@@ -51,7 +51,7 @@
                     <div class="image-container placeholder" style="width: 200px; height: 200px; overflow: hidden;">
                         <img id="preview1"  src="static/img/noimg.png" alt="Image preview" style="width: 100%; height: 100%; object-fit: cover;" class="img-fluid">
                     </div>
-                    <input type="file" id="image1" class="form-control-sm " accept="image/*" onchange="previewImage('image1', 'preview1')">
+                    <input type="file" id="image1" class="form-control-sm " accept=".jpg, .jpeg, .png"  onchange="previewImage('image1', 'preview1')">
                     <div id="prediction-result-base" class="m-2"></div>
                     <div id="error-message" class="text-danger mt-2" style="display: none;"></div>
                     <div class="col-md-4 justify-content-center text-center align-self-center">
@@ -104,7 +104,7 @@
     </main>
     
     <footer>    
-        <p>SE4AI 2023/2024 - Luigi Emanule Sica & Alessia Ture</p>
+        <p>SE4AI 2023/2024 - Luigi Emanuele Sica & Alessia Ture</p>
     </footer>
     <script>
         document.getElementById("range").oninput = function() {
@@ -131,6 +131,35 @@
             }
         }
 
+        function showAlert(message) {
+            var alertContainer = document.createElement("div");
+            alertContainer.className = "alert alert-warning alert-dismissible fade show";
+            alertContainer.role = "alert";
+            alertContainer.innerHTML = `
+                ${message}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            `;
+            alertContainer.id = "custom-alert";
+            document.body.appendChild(alertContainer);
+        }
+
+        function removeAlert() {
+            var alertContainer = document.getElementById("custom-alert");
+            if (alertContainer) {
+                alertContainer.remove();
+            }
+        }
+
+        var signSelect = document.getElementById("signs");
+        var isSignSelectTouched = false;
+
+        signSelect.addEventListener('change', function() {
+            isSignSelectTouched = true;
+            removeAlert();
+        });
+
         function ApplyIntrusion() {
             var fileInput = document.getElementById("image1");
             var errorMessage = document.getElementById("error-message");
@@ -144,13 +173,19 @@
             } else {
                 errorMessage.style.display = "none"; // Nasconde il messaggio di errore se è presente un'immagine perturbata
             }
+
+            // Controlla se il segnale selezionato è il primo della lista e se il select è stato toccato
+            var signIndex = document.getElementById("signs").value;
+            if (!isSignSelectTouched && signIndex == 0) {
+                showAlert('Please make sure to select the correct label for the first sign.');
+                return; // Interrompe l'esecuzione della funzione se il segnale è il primo della lista e non è stato toccato
+            }
             
             errorMessage.style.display = 'none'; // Nasconde il messaggio di errore se l'immagine è presente
             loadingSpinner.style.display = 'block'; // Mostra il caricamento
             
             var label = document.getElementById("signs").value;
             var formData = new FormData();
-            var signIndex = document.getElementById("signs").value;
             var perturbation =  document.getElementById("range").value;
             
             formData.append("signIndex", signIndex);

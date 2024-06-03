@@ -321,10 +321,6 @@ input[type="range"]::-moz-range-thumb:hover {
   }
 
 
-  .logo {
-    width: 80px; /* Imposta la larghezza desiderata per il logo */
-    height: auto; /* Imposta l'altezza in base alla larghezza per mantenere le proporzioni */
-    margin-right: 10px; /* Aggiunge un margine destro per separare il logo dal testo */
-}
+
 
   
