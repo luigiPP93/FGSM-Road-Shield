@@ -20,7 +20,14 @@ from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNor
 from keras.optimizers import Adam
 from keras.regularizers import l2
 
+# Define the function to create a robust model for image classification
 def create_robust_model():
+    """
+    Creates a robust model for image classification.
+
+    Returns:
+    model (Sequential): The created model.
+    """
     model = Sequential()
     
     # Primo blocco convoluzionale

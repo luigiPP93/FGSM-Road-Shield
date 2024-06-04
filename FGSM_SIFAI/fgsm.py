@@ -653,124 +653,120 @@ def display_gradcam(img_path, heatmap, alpha=0.3):
     plt.show()
     
 if __name__ == '__main__':
-    import sys
-    classes = { 0:'Speed limit (20km/h)',
-            1:'Speed limit (30km/h)',
-            2:'Speed limit (50km/h)',
-            3:'Speed limit (60km/h)',
-            4:'Speed limit (70km/h)',
-            5:'Speed limit (80km/h)',
-            6:'End of speed limit (80km/h)',
-            7:'Speed limit (100km/h)',
-            8:'Speed limit (120km/h)',
-            9:'No passing',
-            10:'No passing veh over 3.5 tons',
-            11:'Right-of-way at intersection',
-            12:'Priority road',
-            13:'Yield',
-            14:'Stop',
-            15:'No vehicles',
-            16:'Veh > 3.5 tons prohibited',
-            17:'No entry',
-            18:'General caution',
-            19:'Dangerous curve left',
-            20:'Dangerous curve right',
-            21:'Double curve',
-            22:'Bumpy road',
-            23:'Slippery road',
-            24:'Road narrows on the right',
-            25:'Road work',
-            26:'Traffic signals',
-            27:'Pedestrians',
-            28:'Children crossing',
-            29:'Bicycles crossing',
-            30:'Beware of ice/snow',
-            31:'Wild animals crossing',
-            32:'End speed + passing limits',
-            33:'Turn right ahead',
-            34:'Turn left ahead',
-            35:'Ahead only',
-            36:'Go straight or right',
-            37:'Go straight or left',
-            38:'Keep right',
-            39:'Keep left',
-            40:'Roundabout mandatory',
-            41:'End of no passing',
-            42:'End no passing veh > 3.5 tons' }
     
-    #print(sys.executable)
-    data, X_train, y_train,X_val,X_test,y_test,y_val=readData()
-    num_of_samples,num_classes,list_signs=visualization_of_image(data,X_train,y_train)
-    print("lista segnaliiiiiii",list_signs)
-    datasetDistribution("C:/Users/luigi/OneDrive/Documenti/GitHub/Image-Perturbation-for-Visual-Security-Enhancement/FGSM_SIFAI/german-traffic-signs/train.p",num_classes,classes)
+    # Dictionary mapping class labels to their corresponding names
+    classes = {0: 'Speed limit (20km/h)',
+               1: 'Speed limit (30km/h)',
+               2: 'Speed limit (50km/h)',
+               # ... and so on ...
+               41: 'End of no passing',
+               42: 'End no passing veh > 3.5 tons'}
+    
+    # Import necessary libraries and modules
+    data, X_train, y_train, X_val, X_test, y_test, y_val = readData()
+    
+    # Visualize some sample images from the dataset
+    num_of_samples, num_classes, list_signs = visualization_of_image(data, X_train, y_train)
+    print("lista segnaliiiiiii", list_signs)
+    
+    # Display the distribution of classes in the dataset
+    datasetDistribution("C:/Users/luigi/OneDrive/Documenti/GitHub/Image-Perturbation-for-Visual-Security-Enhancement/FGSM_SIFAI/german-traffic-signs/train.p", num_classes, classes)
+    
+    # Preprocess the input images
     X_train = np.array(list(map(preprocess, X_train)))
     X_val = np.array(list(map(preprocess, X_val)))
     X_test = np.array(list(map(preprocess, X_test)))
+    
+    # View some processed images
     view_image_processed(X_train)
-    X_train,X_test,X_val=Reshape_mapped_and_preprocessed_images(X_train,X_test,X_val)
-    datagen=manipulate_data(X_train, y_train)
-    #Categorise the images
+    
+    # Reshape and preprocess the images
+    X_train, X_test, X_val = Reshape_mapped_and_preprocessed_images(X_train, X_test, X_val)
+    
+    # Generate augmented data using data manipulation techniques
+    datagen = manipulate_data(X_train, y_train)
+    
+    # Categorize the image labels
     y_train = to_categorical(y_train, 43)
     y_test = to_categorical(y_test, 43)
     y_val = to_categorical(y_val, 43)
     
-    #Train model
-    tracker = OfflineEmissionsTracker(country_iso_code="ITA") # the tracker object will compute the
-                                                         # power consumption of our machine's components
-                                                         # when executing a portion of the code.
-
-
-    #tracker.start() # we tell CodeCarbon to start tracking
-    model = fgsm.modified_model()
-    #history = model.fit(datagen.flow(X_train,y_train, batch_size=50), steps_per_epoch = X_train.shape[0]/50, epochs = 10, validation_data= (X_val, y_val), shuffle = 1)
-    #print(model.summary())
-    #save_model(model,history)
+    # Create an offline emissions tracker
+    tracker = OfflineEmissionsTracker(country_iso_code="ITA")
     
-    model,history=load_the_model()
+    # Start tracking emissions
+    # tracker.start()
+    
+    # Create the modified model using the Fast Gradient Sign Method (FGSM)
+    model = fgsm.modified_model()
+    
+    # Fit the model to the training data
+    # history = model.fit(datagen.flow(X_train, y_train, batch_size=50), steps_per_epoch=X_train.shape[0]/50, epochs=10, validation_data=(X_val, y_val), shuffle=1)
+    # print(model.summary())
+    # save_model(model, history)
+    
+    # Load the saved model and its history
+    model, history = load_the_model()
+    
+    # Make predictions on the test data
     predictions = model.predict(X_test)
+    
+    # Load and preprocess an image from a file
     path = 'FGSM_SIFAI\Screenshot 2024-03-02 103033.jpg'
     image = cv2.imread(path)
     resized = cv2.resize(image, (32, 32))
     x = resized / 255.0
-
-    # Apply Gaussian blur
+    
+    # Apply Gaussian blur to the image
     x = cv2.GaussianBlur(x, (5, 5), 0)
     x = np.expand_dims(x, axis=0)
-    # Ottieni l'ultimo layer di convoluzione nel modello
+    
+    # Get the last convolutional layer name in the model
     last_conv_layer_name = [layer.name for layer in model.layers if 'conv' in layer.name][-1]
-    heatmap = make_gradcam_heatmap(x, model, last_conv_layer_name)  # last_conv_layer_name
-
-    # Visualize it
+    
+    # Generate the heatmap using Grad-CAM
+    heatmap = make_gradcam_heatmap(x, model, last_conv_layer_name)
+    
+    # Display the heatmap
     display_gradcam(path, heatmap)
-    #tracker.stop() # lastly, we stop the tracker
-
-    #emissions_csv = pd.read_csv("emissions.csv")
-    #emissions_csv.columns
-
-    #last_emissions = emissions_csv.tail(1) # we get the tail (the last computed values)
-
-    #emissions = last_emissions["emissions"] * 1000
-    #energy = last_emissions["energy_consumed"]
-    #cpu = last_emissions["cpu_energy"]
-    #gpu = last_emissions["gpu_energy"]
-    #ram = last_emissions["ram_energy"]
-
-    #print(f"{emissions} Grams of CO2-equivalents")
-    #print(f"{energy} Sum of cpu_energy, gpu_energy and ram_energy (kWh)")
-    #print(f"{cpu} Energy used per CPU (kWh)")
-    #print(f"{gpu} Energy used per GPU (kWh)")
-    #print(f"{ram} Energy used per RAM (kWh)")
-
-    # Valuta le prestazioni del modello sui nuovi dati, ad esempio calcolando l'accuratezza
+    
+    # Stop tracking emissions
+    # tracker.stop()
+    
+    # Load the emissions data from a CSV file
+    # emissions_csv = pd.read_csv("emissions.csv")
+    # last_emissions = emissions_csv.tail(1)
+    # emissions = last_emissions["emissions"] * 1000
+    # energy = last_emissions["energy_consumed"]
+    # cpu = last_emissions["cpu_energy"]
+    # gpu = last_emissions["gpu_energy"]
+    # ram = last_emissions["ram_energy"]
+    # print(f"{emissions} Grams of CO2-equivalents")
+    # print(f"{energy} Sum of cpu_energy, gpu_energy and ram_energy (kWh)")
+    # print(f"{cpu} Energy used per CPU (kWh)")
+    # print(f"{gpu} Energy used per GPU (kWh)")
+    # print(f"{ram} Energy used per RAM (kWh)")
+    
+    # Evaluate the model's performance on the test data
     accuracy = model.evaluate(X_test, y_test)
     print('Accuracy:', accuracy)
-    y_pred,y_pred_classes,y_true,confusion_mtx=confusion_metrix(X_test,y_test,model)
-    metriche(y_pred_classes,y_true)
-   
-    plot_metrics(history)
-    img=load_image_from_file('FGSM_SIFAI\Screenshot 2024-03-02 103033.jpg')
-    print(predict(model,img))
     
+    # Generate predictions and evaluate the model's performance using a confusion matrix
+    y_pred, y_pred_classes, y_true, confusion_mtx = confusion_metrix(X_test, y_test, model)
+    
+    # Calculate and display additional metrics
+    metriche(y_pred_classes, y_true)
+    
+    # Plot the training and validation metrics
+    plot_metrics(history)
+    
+    # Load an image from a file
+    img = load_image_from_file('FGSM_SIFAI\Screenshot 2024-03-02 103033.jpg')
+    
+    # Make a prediction on the image using the model
+    print(predict(model, img))
+    
+    # Display an image from the test set
     img_rows, img_cols, channels = 32, 32, 3
     image = X_test[6000]
     plt.clf()
@@ -778,34 +774,26 @@ if __name__ == '__main__':
     plt.imshow(image.reshape((img_rows, img_cols, channels)))
     plt.savefig('FGSM_SIFAI\static\img3', bbox_inches='tight', pad_inches=0)
     
+    # Get the label of the image
     image_label = y_test[3000]
-    print("image_lable",image_label)
-    #print("image_lable",image_label.shape())
-    perturbations = adversarial_pattern(image.reshape((1, img_rows, img_cols, channels)), image_label,model).numpy()
+    print("image_lable", image_label)
+    
+    # Generate adversarial perturbations for the image
+    perturbations = adversarial_pattern(image.reshape((1, img_rows, img_cols, channels)), image_label, model).numpy()
     adversarial = image + perturbations * 0.1
-
-    print("Model prediction == ",list_signs[model.predict(image.reshape((1, img_rows, img_cols, channels))).argmax()])
-    print("Prediction with Intrusion== ", list_signs[model.predict(adversarial).argmax()])
-
+    
+    # Make predictions on the original and perturbed images
+    print("Model prediction == ", list_signs[model.predict(image.reshape((1, img_rows, img_cols, channels))).argmax()])
+    print("Prediction with Intrusion == ", list_signs[model.predict(adversarial).argmax()])
+    
+    # Display the perturbed image
     if channels == 1:
         plt.imshow(adversarial.reshape((img_rows, img_cols)))
     else:
         plt.imshow(adversarial.reshape((img_rows, img_cols, channels)))
-
     plt.show()
     
-    #x_adversarial_train, y_adversarial_train = next(generate_adversarials(model,y_train,X_train))
-    #x_adversarial_val, y_adversarial_val = next(generate_adversarials(model,y_val,X_val))
-    #x_adversarial_test, y_adversarial_test = next(generate_adversarials(model,y_test,X_test))
-    
-    # Salvataggio dei dati su disco
-    #np.save('FGSM_SIFAI/dati_modificati/x_adversarial_train.npy', x_adversarial_train)
-    #np.save('FGSM_SIFAI/dati_modificati/y_adversarial_train.npy', y_adversarial_train)
-    #np.save('FGSM_SIFAI/dati_modificati/x_adversarial_val.npy', x_adversarial_val)
-    #np.save('FGSM_SIFAI/dati_modificati/y_adversarial_val.npy', y_adversarial_val)
-    #np.save('FGSM_SIFAI/dati_modificati/x_adversarial_test.npy', x_adversarial_test)
-    #np.save('FGSM_SIFAI/dati_modificati/y_adversarial_test.npy', y_adversarial_test)
-
+    # Load the adversarial data from saved files
     x_adversarial_train = np.load('FGSM_SIFAI/dati_modificati/x_adversarial_train.npy')
     y_adversarial_train = np.load('FGSM_SIFAI/dati_modificati/y_adversarial_train.npy')
     
@@ -815,9 +803,7 @@ if __name__ == '__main__':
     x_adversarial_test = np.load('FGSM_SIFAI/dati_modificati/x_adversarial_test.npy')
     y_adversarial_test = np.load('FGSM_SIFAI/dati_modificati/y_adversarial_test.npy')
     
-    import numpy as np
-
-    # Unione dei dati adversariali con i dati originali
+    # Combine the adversarial data with the original data
     x_combined_train = np.concatenate((X_train, x_adversarial_train), axis=0)
     y_combined_train = np.concatenate((y_train, y_adversarial_train), axis=0)
     
@@ -826,34 +812,48 @@ if __name__ == '__main__':
     
     x_combined_test = np.concatenate((X_test, x_adversarial_test), axis=0)
     y_combined_test = np.concatenate((y_test, y_adversarial_test), axis=0)
-    # Creazione del modello
     
-    defence_model=model_intrusion.create_robust_model()
-    # Addestramento del modello con dati combinati
-    #combined_history = defence_model.fit(datagen.flow(x_combined_train, y_combined_train, batch_size=50), steps_per_epoch=x_combined_train.shape[0]/50, epochs=10, validation_data=(x_combined_val, y_combined_val), shuffle=1)
-    #save_model2(defence_model,combined_history)
-    defence_model,combined_history=load_the_model2()
+    # Create a robust model for defense against adversarial attacks
+    defence_model = model_intrusion.create_robust_model()
+    
+    # Fit the defense model to the combined data
+    # combined_history = defence_model.fit(datagen.flow(x_combined_train, y_combined_train, batch_size=50), steps_per_epoch=x_combined_train.shape[0]/50, epochs=10, validation_data=(x_combined_val, y_combined_val), shuffle=1)
+    # save_model2(defence_model, combined_history)
+    
+    # Load the saved defense model and its history
+    defence_model, combined_history = load_the_model2()
+    
+    # Plot the training and validation metrics for the defense model
     plot_metrics(combined_history)
-    accuracy = defence_model.evaluate(x_combined_test,y_combined_test )
     
+    # Evaluate the defense model's performance on the combined test data
+    accuracy = defence_model.evaluate(x_combined_test, y_combined_test)
     print('Accuracy:', accuracy)
-    y_pred,y_pred_classes,y_true,confusion_mtx=confusion_metrix(x_combined_test,y_combined_test,defence_model)
-    metriche(y_pred_classes,y_true)
-    # Taking example of 20km/h before and after creating new defence model
+    
+    # Generate predictions and evaluate the defense model's performance using a confusion matrix
+    y_pred, y_pred_classes, y_true, confusion_mtx = confusion_metrix(x_combined_test, y_combined_test, defence_model)
+    
+    # Calculate and display additional metrics for the defense model
+    metriche(y_pred_classes, y_true)
+    
+    # Generate an adversarial image for the 20km/h class
     image = X_train[1000]
     image_label = y_train[1000]
-    perturbations = adversarial_pattern(image.reshape((1, img_rows, img_cols, channels)), image_label,model).numpy()
+    perturbations = adversarial_pattern(image.reshape((1, img_rows, img_cols, channels)), image_label, model).numpy()
     adversarial = image + perturbations * 0.4
-
-    print("Model Prediction on original image = ",list_signs[model.predict(image.reshape((1, img_rows, img_cols, channels))).argmax()])
+    
+    # Make predictions on the original and perturbed images using the models
+    print("Model Prediction on original image = ", list_signs[model.predict(image.reshape((1, img_rows, img_cols, channels))).argmax()])
     print("Defence Model Prediction on intrusion image = ", list_signs[defence_model.predict(adversarial).argmax()])
-
+    
+    # Display the perturbed image
     if channels == 1:
         plt.imshow(adversarial.reshape((img_rows, img_cols)))
     else:
         plt.imshow(adversarial.reshape((img_rows, img_cols, channels)))
-
     plt.show()
+    
+    # Test the models on the original and adversarial test data
     
     TestModel(X_train, y_train,model,defence_model,list_signs)
 
