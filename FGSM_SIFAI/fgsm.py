@@ -409,6 +409,19 @@ if __name__ == "__main__":
 import cv2
 
 def load_image_from_file(file_or_filepath):
+    """
+    Load an image from a file and perform necessary preprocessing.
+
+    Args:
+        file_or_filepath (str): The path to the image file.
+
+    Returns:
+        numpy.ndarray: The preprocessed image as a NumPy array.
+
+    Raises:
+        None
+
+    """
     # Leggi l'immagine dal percorso del file in formato BGR
     img = cv2.imread(file_or_filepath)
 
@@ -433,41 +446,68 @@ def load_image_from_file(file_or_filepath):
     return img
 
 
-def predict(model,img):
+def predict(model, img):
+    """
+    Predicts the class label for an input image using a given model.
+
+    Args:
+        model (keras.Model): The trained model used for prediction.
+        img (numpy.ndarray): The input image to be classified.
+
+    Returns:
+        tuple: A tuple containing the predicted class label index and the corresponding class name.
+    """
     list_signs = [
-    'Speed limit (20km/h)', 'Speed limit (30km/h)', 'Speed limit (50km/h)', 'Speed limit (60km/h)', 
-    'Speed limit (70km/h)', 'Speed limit (80km/h)', 'End of speed limit (80km/h)', 'Speed limit (100km/h)', 
-    'Speed limit (120km/h)', 'No passing', 'No passing for vechiles over 3.5 metric tons', 
-    'Right-of-way at the next intersection', 'Priority road', 'Yield', 'Stop', 'No vechiles', 
-    'Vechiles over 3.5 metric tons prohibited', 'No entry', 'General caution', 'Dangerous curve to the left', 
-    'Dangerous curve to the right', 'Double curve', 'Bumpy road', 'Slippery road', 
-    'Road narrows on the right', 'Road work', 'Traffic signals', 'Pedestrians', 'Children crossing', 
-    'Bicycles crossing', 'Beware of ice/snow', 'Wild animals crossing', 'End of all speed and passing limits', 
-    'Turn right ahead', 'Turn left ahead', 'Ahead only', 'Go straight or right', 'Go straight or left', 
-    'Keep right', 'Keep left', 'Roundabout mandatory', 'End of no passing', 
-    'End of no passing by vechiles over 3.5 metric tons'
+        'Speed limit (20km/h)', 'Speed limit (30km/h)', 'Speed limit (50km/h)', 'Speed limit (60km/h)', 
+        'Speed limit (70km/h)', 'Speed limit (80km/h)', 'End of speed limit (80km/h)', 'Speed limit (100km/h)', 
+        'Speed limit (120km/h)', 'No passing', 'No passing for vechiles over 3.5 metric tons', 
+        'Right-of-way at the next intersection', 'Priority road', 'Yield', 'Stop', 'No vechiles', 
+        'Vechiles over 3.5 metric tons prohibited', 'No entry', 'General caution', 'Dangerous curve to the left', 
+        'Dangerous curve to the right', 'Double curve', 'Bumpy road', 'Slippery road', 
+        'Road narrows on the right', 'Road work', 'Traffic signals', 'Pedestrians', 'Children crossing', 
+        'Bicycles crossing', 'Beware of ice/snow', 'Wild animals crossing', 'End of all speed and passing limits', 
+        'Turn right ahead', 'Turn left ahead', 'Ahead only', 'Go straight or right', 'Go straight or left', 
+        'Keep right', 'Keep left', 'Roundabout mandatory', 'End of no passing', 
+        'End of no passing by vechiles over 3.5 metric tons'
     ]
-    prediction=np.argmax(model.predict(img), axis=-1)
-    predizione = (prediction[0], (list_signs[prediction[0]]))
+    prediction = np.argmax(model.predict(img), axis=-1)
+    predizione = (prediction[0], list_signs[prediction[0]])
     return predizione
 
-def adversarial_pattern(image, label,model):
+def adversarial_pattern(image, label, model):
+    """
+    Generates an adversarial pattern for a given image and label using the Fast Gradient Sign Method (FGSM).
+
+    Parameters:
+        image (tf.Tensor): The input image.
+        label (tf.Tensor): The true label of the image.
+        model (tf.keras.Model): The model used for prediction.
+
+    Returns:
+        tf.Tensor: The adversarial pattern generated using FGSM.
+    """
     image = tf.cast(image, tf.float32)
 
     with tf.GradientTape() as tape:
         tape.watch(image)
         prediction = model(image)
-        #print("Predictionnnn",prediction)
         loss = tf.keras.losses.MSE(label, prediction)
-        #print("loss", loss)
-        #print("lable",label)
-        #print("prediction",prediction)
     gradient = tape.gradient(loss, image)
-    #print("gradient",gradient)
     signed_grad = tf.sign(gradient)
     return signed_grad
 
 def generate_adversarials(model, y_train, X_train):
+    """
+    Generates adversarial examples for a given model using the Fast Gradient Sign Method (FGSM).
+
+    Args:
+        model (tf.keras.Model): The target model to generate adversarial examples for.
+        y_train (numpy.ndarray): The labels of the training dataset.
+        X_train (numpy.ndarray): The images of the training dataset.
+
+    Yields:
+        tuple: A tuple containing the adversarial examples (x) and their corresponding labels (y).
+    """
     while True:
         x = []
         y = []
@@ -482,38 +522,63 @@ def generate_adversarials(model, y_train, X_train):
 
         yield x, y
 
-def TestModel(X_train, y_train,model,defence_model,list_signs):
+def TestModel(X_train, y_train, model, defence_model, list_signs):
+    """
+    Test the model's performance on attacked images and evaluate the defense model's predictions.
+
+    Args:
+        X_train (numpy.ndarray): Training images.
+        y_train (numpy.ndarray): Training labels.
+        model: The model to be tested.
+        defence_model: The defense model used for evaluation.
+        list_signs (list): List of sign labels.
+
+    Returns:
+        None
+    """
     # Create test sample with 10 only attacked image and predict right label
-    test_set = datagen.flow(X_train, y_train, batch_size = 10)
+    test_set = datagen.flow(X_train, y_train, batch_size=10)
     X_test_set, y_test_set = next(test_set)
     d2 = 0
     nd2 = 0
     for X_test_set, y_test_set in zip(X_test_set, y_test_set):
-            perturbations = adversarial_pattern(X_test_set.reshape((1, img_rows, img_cols, channels)), y_test_set,model).numpy()
-            adversarial = X_test_set + perturbations * 0.4
-            Model_Prediction = list_signs[model.predict(adversarial.reshape((1, img_rows, img_cols, channels))).argmax()]
-            Truth_label = list_signs[y_test_set.argmax()]
-            print('Model Prediction:', Model_Prediction,",", 'Truth label:', Truth_label)
-            if channels == 1:
-                plt.imshow(X_test_set.reshape(img_rows, img_cols))
-            else:
-                plt.imshow(X_test_set)
-            plt.show()
+        perturbations = adversarial_pattern(X_test_set.reshape((1, img_rows, img_cols, channels)), y_test_set).numpy()
+        adversarial = X_test_set + perturbations * 0.4
+        Model_Prediction = list_signs[model.predict(adversarial.reshape((1, img_rows, img_cols, channels))).argmax()]
+        Truth_label = list_signs[y_test_set.argmax()]
+        print('Model Prediction:', Model_Prediction, ",", 'Truth label:', Truth_label)
+        if channels == 1:
+            plt.imshow(X_test_set.reshape(img_rows, img_cols))
+        else:
+            plt.imshow(X_test_set)
+        plt.show()
 
-            if Model_Prediction != Truth_label:
-                Defence_Model = list_signs[defence_model.predict(adversarial.reshape((1, img_rows, img_cols, channels))).argmax()]
-                print("Image was attacked")
-                if Defence_Model == Truth_label:
-                    print("Defence Model prediction:", Defence_Model)
-                    d2=d2+1
-                else:
-                    print("Can not detect correctly")
-                    nd2=nd2+1
-    print("Number of correct defence predictions",d2)
-    print("Number of not detected predictions",nd2)
+        if Model_Prediction != Truth_label:
+            Defence_Model = list_signs[defence_model.predict(adversarial.reshape((1, img_rows, img_cols, channels))).argmax()]
+            print("Image was attacked")
+            if Defence_Model == Truth_label:
+                print("Defence Model prediction:", Defence_Model)
+                d2 = d2 + 1
+            else:
+                print("Can not detect correctly")
+                nd2 = nd2 + 1
+    print("Number of correct defence predictions", d2)
+    print("Number of not detected predictions", nd2)
 
 
 def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None):
+    """
+    Generates a Grad-CAM heatmap for the given input image array.
+
+    Args:
+        img_array (numpy.ndarray): The input image array.
+        model (tf.keras.Model): The model used for prediction and gradient computation.
+        last_conv_layer_name (str): The name of the last convolutional layer in the model.
+        pred_index (int, optional): The index of the predicted class. If not provided, the top predicted class is used.
+
+    Returns:
+        numpy.ndarray: The Grad-CAM heatmap as a numpy array.
+    """
     # First, we create a model that maps the input image to the activations
     # of the last conv layer as well as the output predictions
     grad_model = tf.keras.models.Model(
@@ -551,6 +616,14 @@ from tensorflow.keras.preprocessing import image
 import matplotlib.cm as cm  # Add this import
 
 def display_gradcam(img_path, heatmap, alpha=0.3):
+    """
+    Display the Grad-CAM visualization on top of the original image.
+
+    Args:
+        img_path (str): The path to the input image file.
+        heatmap (numpy.ndarray): The heatmap generated by Grad-CAM.
+        alpha (float, optional): The transparency of the heatmap overlay. Defaults to 0.3.
+    """
     img = tf.keras.preprocessing.image.load_img(img_path)
     img = tf.keras.preprocessing.image.img_to_array(img)
 
