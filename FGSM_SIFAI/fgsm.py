@@ -2,7 +2,6 @@ import pickle
 import pandas as pd
 import matplotlib
 import seaborn as sns
-#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import random
 import numpy as np
@@ -16,7 +15,6 @@ import model_intrusion
 import tensorflow as tf
 import json
 from sklearn.metrics import confusion_matrix
-import numpy as np
 import requests
 from PIL import Image
 from keras.applications import VGG16
@@ -31,52 +29,60 @@ from codecarbon import OfflineEmissionsTracker
 import os
 
 def readData():
-        #opening pickle files and creating variables for testing, training and validation data
-    with open('FGSM_SIFAI/german-traffic-signs/train.p','rb') as f:    #rb means read binary format.
-        train_data = pickle.load(f)                                    #f is pointer
+    """
+    Reads the training, testing, and validation data from pickle files.
+
+    Returns:
+    - data: DataFrame containing the class labels and names.
+    - X_train: NumPy array of training images.
+    - y_train: NumPy array of training labels.
+    - X_val: NumPy array of validation images.
+    - X_test: NumPy array of testing images.
+    - y_test: NumPy array of testing labels.
+    - y_val: NumPy array of validation labels.
+    """
+    # Opening pickle files and creating variables for testing, training, and validation data
+    with open('FGSM_SIFAI/german-traffic-signs/train.p','rb') as f:
+        train_data = pickle.load(f)
     with open('FGSM_SIFAI/german-traffic-signs/test.p','rb') as f:
         test_data = pickle.load(f)
     with open('FGSM_SIFAI/german-traffic-signs/valid.p','rb') as f:
         valid_data = pickle.load(f)
 
-    print(type(train_data))
-
     X_train, y_train = train_data['features'], train_data['labels']
     X_val, y_val = valid_data['features'], valid_data['labels']
     X_test, y_test = test_data['features'], test_data['labels']
 
-    print(X_train.shape)
-    print(X_val.shape)
-    print(X_test.shape)
-
-    assert(X_train.shape[0] == y_train.shape[0]), 'The number of images is not equal to the number of labels'
-    assert(X_val.shape[0] == y_val.shape[0]), 'The number of images is not equal to the number of labels'
-    assert(X_test.shape[0] == y_test.shape[0]), 'The number of images is not equal to the number of labels'
-
-    assert(X_train.shape[1:] == (32,32,3)), "The dimensions of the images are not 32x32x3"
-    assert(X_val.shape[1:] == (32,32,3)), "The dimensions of the images are not 32x32x3"
-    assert(X_test.shape[1:] == (32,32,3)), "The dimensions of the images are not 32x32x3"
-
     data = pd.read_csv('FGSM_SIFAI/german-traffic-signs/signnames.csv')
-    print("dim",data.shape)
-    print(data)
-    
-    return data, X_train, y_train,X_val,X_test,y_test,y_val
-import random
+
+    return data, X_train, y_train, X_val, X_test, y_test, y_val
 
 def visualization_of_image(data, X_train, y_train):
+    """
+    Visualizes a random sample of images from each class.
+
+    Args:
+    - data: DataFrame containing the class labels and names.
+    - X_train: NumPy array of training images.
+    - y_train: NumPy array of training labels.
+
+    Returns:
+    - num_of_samples: List containing the number of samples for each class.
+    - num_classes: Total number of classes.
+    - list_signs: List containing the names of each class.
+    """
     num_of_samples = []
     list_signs = []
     cols = 5
     num_classes = 43
-    fig, axs = plt.subplots(nrows=num_classes, ncols=cols, figsize=(10, 50))  # Aumenta le dimensioni della figura
+    fig, axs = plt.subplots(nrows=num_classes, ncols=cols, figsize=(10, 50))
     fig.tight_layout()
 
     for j in range(num_classes):
         x_selected = X_train[y_train == j]
         for i in range(cols):
-            idx = random.randint(1, len(x_selected) - 1)  # Aggiusta l'indice casuale valido
-            axs[j][i].imshow(x_selected[idx], cmap=plt.get_cmap("gray"))  # Usa directamente x_selected[idx]
+            idx = random.randint(1, len(x_selected) - 1)
+            axs[j][i].imshow(x_selected[idx], cmap=plt.get_cmap("gray"))
             axs[j][i].axis("off")
             if i == 2:
                 axs[j][i].set_title(str(j) + "-" + data.iloc[j]["SignName"])
@@ -86,186 +92,284 @@ def visualization_of_image(data, X_train, y_train):
     return num_of_samples, num_classes, list_signs
 
 def datasetDistribution(file_path, num_classes, class_names):
-    # Carica il file pickle
+    """
+    Displays the distribution of images in each class.
+
+    Args:
+    - file_path: Path to the pickle file containing the dataset.
+    - num_classes: Total number of classes.
+    - class_names: List of class names.
+
+    Returns: None
+    """
     with open(file_path, 'rb') as f:
         data = pickle.load(f)
-    
-    # Estrarre le etichette delle classi
+
     labels = data['labels']
-    
-    # Contare il numero di immagini per ciascuna classe
+
     train_number = [0] * num_classes
     for label in labels:
         train_number[label] += 1
 
-    # Generare i nomi delle classi
     class_num = [class_names[i] for i in range(num_classes)]
 
-    print(train_number)
     total_images = sum(train_number)
-    print(total_images)
 
-    # Plotting the number of images in each class
     plt.figure(figsize=(15,8))
     plt.bar(class_num, train_number)
-    
-    # Regolare le etichette
-    plt.xticks(rotation=90, ha='right', fontsize=12)  # Inclinare le etichette e aumentare la dimensione del font
-    plt.yticks(fontsize=12)  # Aumentare la dimensione del font per l'asse y
-    
+
+    plt.xticks(rotation=90, ha='right', fontsize=12)
+    plt.yticks(fontsize=12)
+
     plt.title("Distribution of the training dataset", fontsize=16)
     plt.xlabel("Class", fontsize=14)
     plt.ylabel("Number of images", fontsize=14)
-    
-    plt.tight_layout()  # Migliora il layout per evitare che le etichette siano tagliate
+
+    plt.tight_layout()
     plt.show()
-    
-#converting image into gray scale so that neural network can learn the pattern easily
+
 def gray(img):
+    """
+    Converts an image to grayscale.
+
+    Args:
+    - img: Input image.
+
+    Returns:
+    - img: Grayscale image.
+    """
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     return img
 
 def equalize(img):
+    """
+    Applies histogram equalization to an image.
+
+    Args:
+    - img: Input image.
+
+    Returns:
+    - img: Image after histogram equalization.
+    """
     img = cv2.equalizeHist(img)
     return img
-  #equalize histogram extract reigon of interest very correctly
 
 def preprocess(img):
-    #img = gray(img)
-    #img = equalize(img)
-    img = img/255 #normalizing of images
+    """
+    Preprocesses an image by converting it to grayscale and normalizing the pixel values.
+
+    Args:
+    - img: Input image.
+
+    Returns:
+    - img: Preprocessed image.
+    """
+    img = img/255
     return img
 
 def view_image_processed(X_train):
-    # Supponendo che X_train sia stato già definito come un array NumPy
-    # con le immagini preprocessate
+    """
+    Displays the first 5 preprocessed images from the training set.
 
-    # Stampa le prime 5 immagini utilizzando imshow
+    Args:
+    - X_train: NumPy array of training images.
+
+    Returns: None
+    """
     fig, axes = plt.subplots(nrows=1, ncols=5, figsize=(20, 4))
 
     for i in range(5):
-        axes[i].imshow(X_train[i])  # Mostra l'immagine
-        axes[i].set_title('Immagine {}'.format(i+1))  # Imposta il titolo
-        axes[i].axis('off')  # Nasconde gli assi
+        axes[i].imshow(X_train[i])
+        axes[i].set_title('Image {}'.format(i+1))
+        axes[i].axis('off')
 
-    plt.tight_layout()  # Aggiusta la disposizione delle immagini
-    plt.show()  # Mostra il plot
-    
-def Reshape_mapped_and_preprocessed_images(X_train,X_test,X_val):
-    #Reshape mapped and preprocessed images
+    plt.tight_layout()
+    plt.show()
+
+def Reshape_mapped_and_preprocessed_images(X_train, X_test, X_val):
+    """
+    Reshapes the mapped and preprocessed images.
+
+    Args:
+    - X_train: NumPy array of training images.
+    - X_test: NumPy array of testing images.
+    - X_val: NumPy array of validation images.
+
+    Returns:
+    - X_train: Reshaped training images.
+    - X_test: Reshaped testing images.
+    - X_val: Reshaped validation images.
+    """
     X_train = X_train.reshape(34799, 32, 32, 3)
     X_test = X_test.reshape(12630, 32, 32, 3)
     X_val = X_val.reshape(4410, 32, 32, 3)
 
     img_rows, img_cols, channels = 32, 32, 3
 
-    #Display dataset shape
     print(X_train.shape)
     print(X_val.shape)
     print(X_test.shape)
-    
-    return X_train,X_test,X_val
+
+    return X_train, X_test, X_val
 
 def manipulate_data(X_train, y_train):
-    #Manipulate data within the batches for better model recognition
+    """
+    Manipulates the data within the batches for better model recognition.
+
+    Args:
+    - X_train: NumPy array of training images.
+    - y_train: NumPy array of training labels.
+
+    Returns:
+    - datagen: ImageDataGenerator object for data manipulation.
+    """
     datagen = ImageDataGenerator(width_shift_range=0.1,
                                 height_shift_range=0.1,
                                 zoom_range=0.2,
                                 shear_range=0.1,
                                 rotation_range=10.)
     datagen.fit(X_train)
-    # for X_batch, y_batch in
 
-    batches = datagen.flow(X_train, y_train, batch_size = 15)
+    batches = datagen.flow(X_train, y_train, batch_size=15)
     X_batch, y_batch = next(batches)
 
     fig, axs = plt.subplots(1, 15, figsize=(20, 5))
     fig.tight_layout()
 
-    #Display batch of random 15 images
     for i in range(15):
-        axs[i].imshow(X_batch[i].reshape(32, 32,3))
+        axs[i].imshow(X_batch[i].reshape(32, 32, 3))
         axs[i].axis("off")
         plt.show
 
     print(X_batch.shape)
     return datagen
 
-def save_model(model,history):
+def save_model(model, history):
+    """
+    Saves the trained model and its training history.
+
+    Args:
+    - model: Trained model.
+    - history: Training history.
+
+    Returns: None
+    """
     model.save('FGSM_SIFAI/FGSM_modello.h5')
     with open('FGSM_SIFAI/history/history.json', 'w') as f:
         json.dump(history.history, f)
-        
-def save_model2(model,history):
+
+def save_model2(model, history):
+    """
+    Saves the trained intrusion model and its training history.
+
+    Args:
+    - model: Trained intrusion model.
+    - history: Training history.
+
+    Returns: None
+    """
     model.save('FGSM_SIFAI/FGSM_modello_intrusion.h5')
     with open('FGSM_SIFAI/history/history_intrusion.json', 'w') as f:
         json.dump(history.history, f)
 
 def load_the_model():
+    """
+    Loads the trained model and its training history.
+
+    Returns:
+    - model: Loaded model.
+    - history: Loaded training history.
+    """
     model = load_model('FGSM_SIFAI/FGSM_modello.h5')
 
-    # Carica la storia dell'addestramento
     with open('FGSM_SIFAI/history/history.json', 'r') as f:
         history = json.load(f)
-        
-    return model,history
+
+    return model, history
 
 def load_the_model2():
+    """
+    Loads the trained intrusion model and its training history.
+
+    Returns:
+    - model: Loaded intrusion model.
+    - history: Loaded training history.
+    """
     model = load_model('FGSM_SIFAI/FGSM_modello_intrusion.h5')
 
-    # Carica la storia dell'addestramento
     with open('FGSM_SIFAI/history/history_intrusion.json', 'r') as f:
         history = json.load(f)
-        
-    return model,history
+
+    return model, history
 
 def confusion_metrix(X_test, y_test, model):
-    # Effettua le previsioni sul set di test
+    """
+    Computes and displays the confusion matrix.
+
+    Args:
+    - X_test: NumPy array of testing images.
+    - y_test: NumPy array of testing labels.
+    - model: Trained model.
+
+    Returns:
+    - y_pred: Predicted labels.
+    - y_pred_classes: Predicted classes.
+    - y_true: True labels.
+    - confusion_mtx: Confusion matrix.
+    """
     y_pred = model.predict(X_test)
-    
-    # Converti le previsioni e le etichette reali da one-hot a classi intere
+
     y_pred_classes = np.argmax(y_pred, axis=1)
     y_true = np.argmax(y_test, axis=1)
 
-    # Calcola la matrice di confusione
     confusion_mtx = confusion_matrix(y_true, y_pred_classes)
 
-    # Ora puoi stampare la matrice di confusione
     print(confusion_mtx)
-    
-    plt.figure(figsize=(15,10))  # Aumenta le dimensioni del grafico
-    sns.heatmap(confusion_mtx, annot=True, fmt='d', cmap='Blues', annot_kws={"size": 10})  # Riduci la dimensione del testo
+
+    plt.figure(figsize=(15,10))
+    sns.heatmap(confusion_mtx, annot=True, fmt='d', cmap='Blues', annot_kws={"size": 10})
     plt.xlabel('Predicted')
     plt.ylabel('Truth')
     plt.show()
-    
-    return y_pred,y_pred_classes,y_true,confusion_mtx
 
-    
-def metriche(y_pred_classes,y_true):
-    # Calcola l'accuratezza
+    return y_pred, y_pred_classes, y_true, confusion_mtx
+
+def metriche(y_pred_classes, y_true):
+    """
+    Computes and displays the accuracy, precision, recall, and F1-score.
+
+    Args:
+    - y_pred_classes: Predicted classes.
+    - y_true: True labels.
+
+    Returns: None
+    """
     accuracy = accuracy_score(y_true, y_pred_classes)
     print("Accuracy:", accuracy)
 
-    # Calcola la precision
     precision = precision_score(y_true, y_pred_classes, average='weighted')
     print("Precision:", precision)
 
-    # Calcola il recall
     recall = recall_score(y_true, y_pred_classes, average='weighted')
     print("Recall:", recall)
 
-    # Calcola l'F1-score
     f1 = f1_score(y_true, y_pred_classes, average='weighted')
     print("F1-score:", f1)
-    
+
 def plot_metrics(history):
-    # Estrarre i dati dall'oggetto history
+    """
+    Plots the training and validation accuracy over epochs.
+
+    Args:
+    - history: Training history.
+
+    Returns: None
+    """
     loss = history['loss']
     accuracy = history['accuracy']
     val_loss = history['val_loss']
     val_accuracy = history['val_accuracy']
-    
+
     plt.figure(figsize=(10, 5))
     plt.plot(accuracy, label='Training Accuracy')
     plt.plot(val_accuracy, label='Validation Accuracy')
@@ -274,8 +378,28 @@ def plot_metrics(history):
     plt.ylabel('Accuracy')
     plt.legend()
     plt.show()
-    
-    plt.plot(history['accuracy'])
+
+def main():
+    """
+    Main function to execute the code.
+    """
+    data, X_train, y_train, X_val, X_test, y_test, y_val = readData()
+    num_of_samples, num_classes, list_signs = visualization_of_image(data, X_train, y_train)
+    datasetDistribution('FGSM_SIFAI/german-traffic-signs/train.p', num_classes, list_signs)
+    X_train = preprocess(X_train)
+    view_image_processed(X_train)
+    X_train, X_test, X_val = Reshape_mapped_and_preprocessed_images(X_train, X_test, X_val)
+    datagen = manipulate_data(X_train, y_train)
+    save_model(model, history)
+    save_model2(model, history)
+    model, history = load_the_model()
+    model, history = load_the_model2()
+    y_pred, y_pred_classes, y_true, confusion_mtx = confusion_metrix(X_test, y_test, model)
+    metriche(y_pred_classes, y_true)
+    plot_metrics(history)
+
+if __name__ == "__main__":
+    main()
     plt.plot(history['val_accuracy'])
     plt.legend(['accuracy', 'val_accuracy'])
     plt.title('Accuracy')
