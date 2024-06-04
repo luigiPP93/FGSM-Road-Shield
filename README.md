@@ -7,7 +7,7 @@ Alessia Ture
 Luigi Emanuele Sica
 
 ## Project Structure
-![Web app](FGSM_SIFAI/img/image.png ): Contains the image of our developed web application which demonstrates how, given an input image and an imperceptible perturbation applied to it, the prediction of the perturbed image with the base model is completely different (in orange), whereas with the robust model the prediction turns out to be correct (in green). It also shows that the robust model maintains good performance despite the attack.
+![Web app](FGSM_SIFAI/img/image.png ): Contains the image of our developed web application which demonstrates how, given an input image and an imperceptible perturbation applied to it, the prediction of the perturbed image with the base model is completely different (in orange), whereas with the robust model the prediction turns out to be correct (in blue). It also shows that the robust model maintains good performance despite the attack.
 
 ## Prerequisites
 To run the code, you need to:
