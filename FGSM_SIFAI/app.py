@@ -9,18 +9,31 @@ import cv2
 from flask import Flask, render_template, request, jsonify, url_for
 from tensorflow.keras.utils import to_categorical
 
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'FGSM_SIFAI/static/img'
 
 @app.route('/')
 def index():
+    """
+    Renders the index.html template with a list of traffic sign names.
+
+    Returns:
+        The rendered index.html template with the list of traffic sign names.
+    """
     # Leggi i nomi dei segnali dal file CSV
     df = pd.read_csv('FGSM_SIFAI/german-traffic-signs/signnames.csv')
     list_signs = df['SignName'].tolist()
-    return render_template('index.html',list_signs=list_signs)
+    return render_template('index.html', list_signs=list_signs)
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    """
+    Endpoint for predicting the class of an uploaded image.
+
+    Returns:
+        str: The predicted class of the image.
+    """
     if request.method == 'POST':
 
         image1 = request.files['image1']
@@ -47,6 +60,19 @@ def predict():
         return str(predizione)
     
 def save_image(image, filepath):
+    """
+    Save the given image to the specified filepath.
+
+    Args:
+        image (PIL.Image.Image): The image to be saved.
+        filepath (str): The filepath where the image will be saved.
+
+    Raises:
+        Exception: If there is an error during the image saving process.
+
+    Returns:
+        None
+    """
     try:
         image.save(filepath)
         print(f"Immagine salvata correttamente in {filepath}")
@@ -56,6 +82,21 @@ def save_image(image, filepath):
         
 @app.route('/applyIntrusion', methods=['POST'])
 def applyIntrusion():
+    """
+    Apply intrusion to an image and return the perturbed image and prediction.
+
+    This function reads a CSV file containing traffic sign names, receives an image file and a perturbation value,
+    applies perturbation to the image, blurs the perturbed image, saves the perturbed image, and returns the URL
+    of the perturbed image and the predicted traffic sign name.
+
+    Returns:
+        A JSON object containing the following keys:
+        - 'image_url': The URL of the perturbed image.
+        - 'prediction': The predicted traffic sign name.
+
+    Raises:
+        None
+    """
     df = pd.read_csv('FGSM_SIFAI/german-traffic-signs/signnames.csv')
     list_signs = df['SignName'].tolist()
     
@@ -110,6 +151,15 @@ def applyIntrusion():
     
 @app.route('/predictWhitIntrusion', methods=['POST'])
 def predictWhitIntrusion():
+    """
+    Endpoint for predicting with intrusion.
+
+    This function handles the POST request to predict with intrusion. It loads the adversarial image from the uploaded folder,
+    loads the model, and predicts the class of the image using the FGSM method. The predicted class is then returned as a string.
+
+    Returns:
+        str: The predicted class of the image.
+    """
     if request.method == 'POST':
         adversarial_filename = "adversarial_img.png"  # Definisci il nome del file separatamente
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], adversarial_filename)  # Utilizza il nome del file per creare il percorso
