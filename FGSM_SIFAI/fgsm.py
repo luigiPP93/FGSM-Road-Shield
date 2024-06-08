@@ -752,7 +752,7 @@ if __name__ == '__main__':
     # Create the modified model using the Fast Gradient Sign Method (FGSM)
     model = fgsm.modified_model()
     
-    # Fit the model to the training data
+    ##############  FIT THE MODEL BASE TO TRAIN DATA ############# 
     # history = model.fit(datagen.flow(X_train, y_train, batch_size=50), steps_per_epoch=X_train.shape[0]/50, epochs=10, validation_data=(X_val, y_val), shuffle=1)
     # print(model.summary())
     # save_model(model, history)
@@ -845,6 +845,20 @@ if __name__ == '__main__':
         plt.imshow(adversarial.reshape((img_rows, img_cols, channels)))
     plt.show()
     
+    ###### GENERATE ADVERSARIAL EXAMPLES FOR THE MODEL USING FGSM ######
+    
+    #x_adversarial_train, y_adversarial_train = next(generate_adversarials(model,y_train,X_train))
+    #x_adversarial_val, y_adversarial_val = next(generate_adversarials(model,y_val,X_val))
+    #x_adversarial_test, y_adversarial_test = next(generate_adversarials(model,y_test,X_test))
+    
+    # Salvataggio dei dati su disco
+    #np.save('FGSM_SIFAI/dati_modificati/x_adversarial_train.npy', x_adversarial_train)
+    #np.save('FGSM_SIFAI/dati_modificati/y_adversarial_train.npy', y_adversarial_train)
+    #np.save('FGSM_SIFAI/dati_modificati/x_adversarial_val.npy', x_adversarial_val)
+    #np.save('FGSM_SIFAI/dati_modificati/y_adversarial_val.npy', y_adversarial_val)
+    #np.save('FGSM_SIFAI/dati_modificati/x_adversarial_test.npy', x_adversarial_test)
+    #np.save('FGSM_SIFAI/dati_modificati/y_adversarial_test.npy', y_adversarial_test)
+    
     # Load the adversarial data from saved files
     x_adversarial_train = np.load('FGSM_SIFAI/dati_modificati/x_adversarial_train.npy')
     y_adversarial_train = np.load('FGSM_SIFAI/dati_modificati/y_adversarial_train.npy')
@@ -868,7 +882,7 @@ if __name__ == '__main__':
     # Create a robust model for defense against adversarial attacks
     defence_model = model_intrusion.create_robust_model()
     
-    # Fit the defense model to the combined data
+    ###############  FIT THE DEFENSE MODEL TO THE COMBINED DATA  ############# 
     # combined_history = defence_model.fit(datagen.flow(x_combined_train, y_combined_train, batch_size=50), steps_per_epoch=x_combined_train.shape[0]/50, epochs=10, validation_data=(x_combined_val, y_combined_val), shuffle=1)
     # save_model2(defence_model, combined_history)
     

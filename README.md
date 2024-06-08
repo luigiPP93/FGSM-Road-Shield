@@ -11,7 +11,8 @@ Luigi Emanuele Sica
 
 ## Prerequisites
 To run the code, you need to:
-1. Download the required library dependencies.
+1. Download the DataSet: https://bitbucket.org/jadslim/german-traffic-signs/src/master/
+2. Download the required library dependencies present in the file requirements.txt
 2. Create the following files by un-commenting the code in the `fgsm.py` file:
    - `x_adversarial_test.npy`
    - `x_adversarial_train.npy`
@@ -27,6 +28,5 @@ To train the two models, the base and the robust model, un-comment the code in t
 To launch the web application, run the command:
 ```bash
 python app.py
-bash
 
 
