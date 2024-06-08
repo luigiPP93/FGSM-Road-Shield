@@ -9,6 +9,16 @@ Luigi Emanuele Sica
 ## Project Structure
 ![Web app](FGSM_SIFAI/img/image.png ): Contains the image of our developed web application which demonstrates how, given an input image and an imperceptible perturbation applied to it, the prediction of the perturbed image with the base model is completely different (in orange), whereas with the robust model the prediction turns out to be correct (in blue). It also shows that the robust model maintains good performance despite the attack.
 
+## Creating a Conda Environment
+
+It is recommended to create a conda environment to ensure that all dependencies are properly installed and isolated.
+
+1. Install Conda by following the official instructions: [Conda Installation](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
+
+2. Create a new conda environment using the provided requirements file:
+
+`conda create --name <env_name> --file <path_to_requirements_file> `
+
 ## Prerequisites
 To run the code, you need to:
 1. Download the DataSet: https://bitbucket.org/jadslim/german-traffic-signs/src/master/
